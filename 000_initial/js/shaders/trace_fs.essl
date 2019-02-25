@@ -1,9 +1,150 @@
 Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 300 es 
-  precision highp float;
+    precision highp float;
 
-  out vec4 fragmentColor;
+    uniform vec4 eyePosition;
 
-  void main(void) {
-    fragmentColor = vec4(0, 1, 0, 1);
+    in vec4 rayDir;
+
+    out vec4 fragmentColor;
+
+    //Sphere tracing leallasi kriteriuma 
+    float epsilon = 0.001;
+
+
+    //
+    //Gomb rajzolasahoz 
+    //
+    
+    //Tavolsagfuggveny 1 sugaru gombhoz.
+    float distSph(vec3 p) {
+        return length(p)-1.0;
+    }
+
+
+    //
+    //Julia-fraktal rajzolasahoz 
+    //
+    
+    //Kvaternio szorzas
+    vec4 quatMult( vec4 q1, vec4 q2 ) {
+        vec4 r;
+
+        r.x   = q1.x * q2.x - dot( q1.yzw, q2.yzw );
+        r.yzw = q1.x * q2.yzw + q2.x * q1.yzw + cross( q1.yzw, q2.yzw );
+
+        return r;
+    }
+
+    //Kvaternio negyzet
+    vec4 quatSq( vec4 q ) {
+        vec4 r;
+
+        r.x   = q.x * q.x - dot( q.yzw, q.yzw );
+        r.yzw = 2.0 * q.x * q.yzw;
+
+        return r;
+    }
+
+    //Valami
+    void iterateIntersect( inout vec4 q, inout vec4 qp) {
+        for( int i = 0; i < 10; i++ ) {
+            qp = 2.0 * quatMult(q, qp);
+            q = quatSq(q) + vec4(1, 0.5, -0.1, 0.3);
+
+            if( dot( q, q ) > 7.0 ) {
+                break;
+            }
+        }
+    }
+
+    //A Julia tavolsagfuggvenye
+    float distJulia(vec3 p) {
+        vec4 z = vec4( p, 0.0 );
+        vec4 zp = vec4( 1, 0.0, 0.0, 0.0 );
+        iterateIntersect( z, zp );
+        float normZ = length( z );
+        return 0.5 * normZ * log( normZ ) / length( zp );
+    }
+
+
+
+    //Altalanos tavolsagfuggveny, hogy ne a lenti kodot kelljen atirni
+    float dist(vec3 p) {
+        return distJulia(p);
+        //return distSph(p);
+    }
+
+    //Gradiens becslese egy pontban numerikus derivalassal
+    vec3 estimateGradient(vec3 p) {
+        return normalize(vec3(
+        dist(p + vec3(epsilon, 0, 0)) - dist(p - vec3(epsilon, 0, 0)),
+        dist(p + vec3(0, epsilon, 0)) - dist(p - vec3(0, epsilon, 0)),
+        dist(p + vec3(0, 0, epsilon)) - dist(p - vec3(0, 0, epsilon))));
+    }
+
+  float intersectQuadric(mat4 A, vec4 e, vec4 d){
+	float a = dot(d * A, d);
+	float b = dot(d * A, e) + dot(e * A, d);
+	float c = dot(e * A, e);
+	float D = sqrt(b*b-4.0*a*c);
+	float t1 = (-b + D) / (2.0*a);
+	float t2 = (-b - D) / (2.0*a);
+	return (t1<0.0)?t2:((t2<0.0)?t1:min(t1, t2));
   }
+
+  void main() { 
+    vec4 d = vec4(normalize(rayDir.xyz), 0.0);
+    vec4 e = eyePosition;
+	mat4 A = mat4(	1, 0, 0, 0,
+		0, 0, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, -9	);
+	float t = intersectQuadric(A, e, d);
+	fragmentColor = vec4(1, 1, 1, 1);
+	if (t > 0.0) {
+		vec4 hit = (t * rayDir) + eyePosition;
+		vec3 normal = normalize( (hit * A + A * hit).xyz );
+		fragmentColor = vec4(normal, 1);
+	}
+  }
+
+
+/*
+    //Fragment shader kod.
+    void main(void) {
+        //Eredeti szinezes:
+        //fragmentColor = vec4(0, 1, 0, 1);
+
+        //Uj hatterszin (sajat valasztas):
+        fragmentColor = vec4(normalize(rayDir.xyz + eyePosition.xyz + vec3(1,1,1)), 1);
+
+        //Sugar haladasi iranya
+        vec3 dir = normalize(rayDir.xyz);
+        //Sugar pillanatnyi pozicioja
+        vec3 p = eyePosition.xyz;
+        //Pillanatnyi tavolsag a kirajzolando objektumtol
+        float d = dist(p);
+
+        //Sugarkovetesi iteracio:
+        for (int i = 1; i < 50; i++) {
+            //Leptetjuk a poziciot,
+            p = p + d*dir;
+            //kiszamitjuk az uj tavolsagot,
+            d = dist(p);
+            //ha elegge kicsi, eltalaltuk az objektumot.
+            if (d < epsilon) {
+                //Az eltalalt objektum feluletenek normalvektora szerint akarjuk most szinezni a pixelt.
+
+                //Gomb eseten lehetne egyszeruen igy szinezni:
+                //fragmentColor = vec4(normalize(p.xyz), 1);
+
+                //Egyebekent a tavolsagfuggveny gradiense a normalvektor:
+                fragmentColor.xyz = estimateGradient(p);
+
+                //Kilepunk a ciklusbol.
+                break;
+            }
+        }
+    }
+	*/
 `;

@@ -2,7 +2,7 @@
 
 const PerspectiveCamera = function() 
 { 
-  this.position = new Vec3(0.0, 0.0, 0.0); 
+  this.position = new Vec3(0.0, 0.0, 10.0); 
   this.ahead = new Vec3(0.0, 0.0, -1.0); 
   this.right = new Vec3(1.0, 0.0, 0.0); 
   this.up = new Vec3(0.0, 1.0, 0.0);  
@@ -43,6 +43,10 @@ PerspectiveCamera.prototype.updateViewMatrix = function(){
   
   this.viewProjMatrix.set(this.viewMatrix).mul(this.projMatrix); 
   // LABTODO: recompute rayDirMatrix 
+  
+  // (EVP)^-1
+  this.rayDirMatrix = new Mat4();  
+  this.rayDirMatrix.translate(this.position).mul(this.viewProjMatrix).invert();
 }; 
 
 PerspectiveCamera.prototype.updateProjMatrix = function(){ 
@@ -58,6 +62,10 @@ PerspectiveCamera.prototype.updateProjMatrix = function(){
   this.viewProjMatrix.set(this.viewMatrix).
                       mul(this.projMatrix); 
   // LABTODO: recompute rayDirMatrix                       
+  
+  // (EVP)^-1
+  this.rayDirMatrix = new Mat4();  
+  this.rayDirMatrix.translate(this.position).mul(this.viewProjMatrix).invert();
 }; 
 
 PerspectiveCamera.prototype.move = function(dt, keysPressed) { 
@@ -112,6 +120,7 @@ PerspectiveCamera.prototype.mouseDown = function() {
 }; 
   
 PerspectiveCamera.prototype.mouseMove = function(event) { 
+  //Itt az előjelek megfordítva az intuitív kameramozgás érdekében.
   this.mouseDelta.x += event.movementX; 
   this.mouseDelta.y += event.movementY; 
   event.preventDefault();  

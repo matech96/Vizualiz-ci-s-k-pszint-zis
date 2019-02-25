@@ -29,6 +29,9 @@ Scene.prototype.update = function(gl, keysPressed) {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
   this.camera.move(dt, keysPressed);
+  
+  this.traceProgram.rayDirMatrix.set(this.camera.rayDirMatrix);
+  this.traceProgram.eyePosition.set(this.camera.position);
 
   this.traceProgram.commit();
   this.quadGeometry.draw();

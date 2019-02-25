@@ -32,6 +32,20 @@ Scene.prototype.update = function(gl, keysPressed) {
   
   this.traceProgram.rayDirMatrix.set(this.camera.rayDirMatrix);
   this.traceProgram.eyePosition.set(this.camera.position);
+  //shape
+  this.traceProgram.quadrics.at(0).set(
+    1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    0, 0, 0, -1);
+  //clipper
+  this.traceProgram.clippers.at(0).set(
+    1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    0, 0, 0, -1).scale(0.5, 2, 0.9);
+
+
 
   this.traceProgram.commit();
   this.quadGeometry.draw();

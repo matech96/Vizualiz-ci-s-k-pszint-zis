@@ -114,29 +114,41 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
 	return (t1<0.0)?t2:((t2<0.0)?t1:min(t1, t2));
   }
 
-  float findBestHit(vec4 e, vec4 d){
-      int bestT;
-      int bestQuadricIndex;
+  float findBestHit(vec4 e, vec4 d, out int bestQuadricIndex){
+    float bestT = 1e6;
+    for(int i = 0; i < 16; i++){
+        float t = intersectClippedQuadric(quadrics[i], e, d, clippers[i]);
+        if (t < bestT) {
+            bestT = t;
+            bestQuadricIndex = i;
+        }
+    }
+    if (bestT > 1e6-1.0){
+        bestT = -1.0;
+    }
+    return bestT;
   }
 
   void main() { 
     vec4 d = vec4(normalize(rayDir.xyz), 0.0);
     vec4 e = eyePosition;
-	mat4 A = quadrics[0]; 
+	//mat4 A = quadrics[0]; 
     /*mat4(	1, 0, 0, 0,
                     0, 0, 0, 0,
                     0, 0, 1, 0,
                     0, 0, 0, -9	);*/
-    mat4 B = clippers[0];
+    //mat4 B = clippers[0];
     /*mat4(	1, 0, 0, 0,
                     0, 0, 0, 0,
                     0, 0, 1, 0,
                     0, 0, 0, -9);*/
 
-	float t = intersectClippedQuadric(A, e, d, B);
+    int quadricIndex;
+	float t = findBestHit(e, d, quadricIndex);
 	fragmentColor = vec4(1, 1, 1, 1);
 	if (t > 0.0) {
 		vec4 hit = (t * rayDir) + eyePosition;
+        mat4 A = quadrics[quadricIndex];
 		vec3 normal = normalize( (hit * A + A * hit).xyz );
 		fragmentColor = vec4(normal, 1);
 	}

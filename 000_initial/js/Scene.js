@@ -56,6 +56,18 @@ Scene.prototype.update = function(gl, keysPressed) {
       0, 0, 0, 0,
       0, 0, 1, 0,
       0, 0, 0, -1).scale(0.5, 2, 0.9);
+      // Scene constructor
+    this.background = new TextureCube(gl, [
+      "media/posx.jpg",
+      "media/negx.jpg",
+      "media/posy.jpg",
+      "media/negy.jpg",
+      "media/posz.jpg",
+      "media/negz.jpg",]);
+
+    // Scene update
+    this.traceProgram.background.set(this.background);
+
 
 
 

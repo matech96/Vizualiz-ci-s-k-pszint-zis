@@ -37,13 +37,13 @@ Scene.prototype.update = function(gl, keysPressed) {
     1, 0, 0, 0,
     0, 1, 0, 0,
     0, 0, 1, 0,
-    0, 0, 0, -1);
+    0, 0, 0, -2);
   //clipper
   this.traceProgram.clippers.at(0).set(
-    1, 0, 0, 0,
-    0, 1, 0, 0,
-    0, 0, 1, 0,
-    0, 0, 0, -1).scale(0.5, 2, 0.9);
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0);
     //shape
     this.traceProgram.quadrics.at(1).set(
       1, 0, 0, 0,

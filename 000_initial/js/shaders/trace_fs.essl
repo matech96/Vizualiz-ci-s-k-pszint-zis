@@ -11,6 +11,8 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
 
     out vec4 fragmentColor;
 
+    vec4 objectColor = vec4(0, 1, 0, 0);
+    vec4 lightDir = vec4(0, 0, 1, 0);
     //Sphere tracing leallasi kriteriuma 
     float epsilon = 0.001;
 
@@ -150,7 +152,7 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
 		vec4 hit = (t * rayDir) + eyePosition;
         mat4 A = quadrics[quadricIndex];
 		vec3 normal = normalize( (hit * A + A * hit).xyz );
-		fragmentColor = vec4(normal, 1);
+		fragmentColor = vec4((objectColor * dot(vec4(normal, 1), lightDir)).xyz, 1);
 	}
   }
 

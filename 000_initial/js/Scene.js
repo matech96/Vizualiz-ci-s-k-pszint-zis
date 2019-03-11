@@ -9,6 +9,14 @@ const Scene = function(gl) {
   this.timeAtLastFrame = this.timeAtFirstFrame;
 
   this.camera = new PerspectiveCamera();
+  
+  this.background = new TextureCube(gl, [
+    "media/posx.jpg",
+    "media/negx.jpg",
+    "media/posy.jpg",
+    "media/negy.jpg",
+    "media/posz.jpg",
+    "media/negz.jpg",]);
 };
 
 Scene.prototype.update = function(gl, keysPressed) {
@@ -32,44 +40,51 @@ Scene.prototype.update = function(gl, keysPressed) {
   
   this.traceProgram.rayDirMatrix.set(this.camera.rayDirMatrix);
   this.traceProgram.eyePosition.set(this.camera.position);
-  //shape
-  this.traceProgram.quadrics.at(0).set(
-    1, 0, 0, 0,
-    0, 1, 0, 0,
-    0, 0, 1, 0,
-    0, 0, 0, -2);
-  //clipper
-  this.traceProgram.clippers.at(0).set(
-    0, 0, 0, 0,
-    0, 0, 0, 0,
-    0, 0, 0, 0,
-    0, 0, 0, 0);
+  
+    /*//shape
+    this.traceProgram.A.set(
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, -10000);
+    //clipper
+    this.traceProgram.B.set(
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, -10000);*/
+    /*    1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, -1).scale(0.5, 2, 0.9);*/
+        
     //shape
+    this.traceProgram.quadrics.at(0).set(
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, -1);
+    //clipper
+    /*this.traceProgram.clippers.at(0).set(
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, -1).scale(0.5, 2, 0.9);*/
+        
     this.traceProgram.quadrics.at(1).set(
-      1, 0, 0, 0,
-      0, 0, 0, 0,
-      0, 0, 1, 0,
-      0, 0, 0, -1);
+        1, 3, 0, 0,
+        0, 1, 3, 0,
+        3, 0, 1, 0,
+        0, 0, 0, -1).translate(3,0,0);
     //clipper
     this.traceProgram.clippers.at(1).set(
-      1, 0, 0, 0,
-      0, 0, 0, 0,
-      0, 0, 1, 0,
-      0, 0, 0, -1).scale(0.5, 2, 0.9);
-      // Scene constructor
-    this.background = new TextureCube(gl, [
-      "media/posx.jpg",
-      "media/negx.jpg",
-      "media/posy.jpg",
-      "media/negy.jpg",
-      "media/posz.jpg",
-      "media/negz.jpg",]);
-
-    // Scene update
-    this.traceProgram.background.set(this.background);
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, -9).translate(3,0,0);
 
 
-
+  this.traceProgram.background.set(this.background);
 
   this.traceProgram.commit();
   this.quadGeometry.draw();

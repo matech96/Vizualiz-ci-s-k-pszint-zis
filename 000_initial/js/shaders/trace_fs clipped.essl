@@ -6,9 +6,6 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
     uniform mat4 quadrics[16];
     uniform mat4 clippers[16];
     uniform vec4 brdfs[16];
-    
-    uniform samplerCube background;
-    
 
 
     in vec4 rayDir;
@@ -18,8 +15,9 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
     //Sphere tracing leallasi kriteriuma 
     float epsilon = 0.0001;
     
-    //uniform mat4 A;
-    //uniform mat4 B;
+    uniform mat4 A;
+        
+    uniform mat4 B;
         
         
     /*mat4 A = mat4(	
@@ -117,7 +115,7 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
     
     
     //Mukodo:
-    float intersectQuadric(vec4 e, vec4 d, mat4 A, mat4 B) {
+    float intersectQuadric(vec4 e, vec4 d) {
         vec4 dA = d*A;
         float a = dot(dA,d);
         float b = dot(dA,e) + dot(e,A*d);
@@ -134,7 +132,7 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
     
     
     //Mukodo:
-    float intersectQuadricClipped(vec4 e, vec4 d, mat4 A, mat4 B) {
+    float intersectQuadricClipped(vec4 e, vec4 d) {
         vec4 dA = d*A;
         float a = dot(dA,d);
         float b = dot(dA,e) + dot(e,A*d);
@@ -202,24 +200,7 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         return (c<0.0)?D:((D<0.0)?c:min(c, D));
     } */
 
-    
-    bool findBestHit(vec4 e, vec4 d, out float bestT, out int bestQuadricIndex) {
-        bestT = 99999999.0;
-        bestQuadricIndex = -1;
-        for (int i = 0; i < 16; i++) {
-            float t = intersectQuadricClipped(e, d, quadrics[i], clippers[i]);
-            if (t>=0.0 && t<bestT) {
-                bestT = t;
-                bestQuadricIndex = i;
-            }
-        }
-        return bestQuadricIndex != -1;
-    }
 
-    float rand(vec3 co)
- {
-     return fract(sin( dot(co.xyz ,vec3(12.9898,78.233,45.5432) )) * 43758.5453);
- }
 
     //Fragment shader kod.
     void main(void) {
@@ -228,41 +209,19 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
 
         //Uj hatterszin (sajat valasztas):
         //fragmentColor = vec4(normalize(rayDir.xyz + eyePosition.xyz + vec3(1,1,1)), 1);
-        //fragmentColor = vec4(rayDir.yyy*0.5+0.5,1);
+        fragmentColor = vec4(rayDir.yyy*0.5+0.5,1);
 
         //Sugar haladasi iranya
         vec4 dir = vec4(normalize(rayDir.xyz), 0.0);
         //Sugar kiindulasa
         vec4 e = eyePosition;
         //vec3 p = vec4(eyePosition.xyz, 1.0);
+        float t = intersectQuadricClipped(e, dir);
         
-        float t;
-        int i;
-        bool hasHit = findBestHit(e, dir, t, i);
-        fragmentColor = vec4(1.0);
-        while (hasHit) {
-            e += dir*t;
-            vec3 normal = normalize( (e * quadrics[i] + quadrics[i] * e).xyz );
-            e.xyz += normal*epsilon*dot(normal,dir.xyz);
-            dir.xyz = reflect(rayDir, vec4(normal, 0.0)).xyz;
-            //dir.xyz = reflect(rayDir, vec4(normal, 0.0)).xyz + rand(dir.xyz)*0.1;
-            //dir.xyz = normal.xyz + rand(dir.xyz);
-            //dir.xyz = normalize(dir.xyz);
-            fragmentColor.rgb *= vec3(0.95,0.9,0.85);
-            if (length(fragmentColor.rgb)<0.1)
-                break;
-            else
-                hasHit = findBestHit(e, dir, t, i);
+        if (t>0.0) {
+            vec4 hit = e + dir*t;
+            fragmentColor.xyz = normalize( (hit * A + A * hit).xyz );
         }
-        fragmentColor.rgb *= texture(background, dir.xyz).rgb;
-        
-        
-        
-        // if () {
-        // }
-        // else {
-            // fragmentColor = vec4(texture(background, rayDir.xyz).rgb, 1.0);
-        // }
 
 /*         //Sugarkovetesi iteracio:
         for (int i = 1; i < 100; i++) {

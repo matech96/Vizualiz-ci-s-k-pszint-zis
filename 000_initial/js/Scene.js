@@ -58,30 +58,51 @@ Scene.prototype.update = function(gl, keysPressed) {
         0, 0, 1, 0,
         0, 0, 0, -1).scale(0.5, 2, 0.9);*/
         
+  const left = new ClippedQuadric(
+  this.traceProgram.quadrics.at(0),
+  this.traceProgram.clippers.at(0), 
+  this.traceProgram.brdfs.at(0)
+  );
+
+  left.setUnitSphere();
+  left.translate(4,0,0);
+
+  const right = new ClippedQuadric(
+  this.traceProgram.quadrics.at(1),
+  this.traceProgram.clippers.at(1), 
+  this.traceProgram.brdfs.at(1)
+  );
+
+  right.setUnitSphere();
+  right.translate(-4,0,0);
+  right.reflective.set(1,0,0,0);
+
     //shape
+    /*
     this.traceProgram.quadrics.at(0).set(
         1, 0, 0, 0,
         0, 1, 0, 0,
         0, 0, 1, 0,
-        0, 0, 0, -1);
+        0, 0, 0, -1);*/
     //clipper
     /*this.traceProgram.clippers.at(0).set(
         1, 0, 0, 0,
         0, 1, 0, 0,
         0, 0, 1, 0,
         0, 0, 0, -1).scale(0.5, 2, 0.9);*/
-        
+        /*
     this.traceProgram.quadrics.at(1).set(
-        1, 3, 0, 0,
-        0, 1, 3, 0,
-        3, 0, 1, 0,
-        0, 0, 0, -1).translate(3,0,0);
+        1, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, -1).translate(3,0,0);*/
     //clipper
+    /*
     this.traceProgram.clippers.at(1).set(
         1, 0, 0, 0,
         0, 1, 0, 0,
         0, 0, 1, 0,
-        0, 0, 0, -9).translate(3,0,0);
+        0, 0, 0, -9).translate(3,0,0);*/
 
 
   this.traceProgram.background.set(this.background);

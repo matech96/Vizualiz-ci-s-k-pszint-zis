@@ -48,25 +48,12 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         }
     }
 
-    float distJulia(vec3 p) {
-        vec4 z = vec4( p, 0.0 );
-        vec4 zp = vec4( 1, 0.0, 0.0, 0.0 );
-        iterateIntersect( z, zp );
-        float normZ = length( z );
-        return 0.5 * normZ * log( normZ ) / length( zp );
-    }
-
-    float dist(vec3 p) {
-        return distJulia(p);
-        //return distSph(p);
-    }
-
     //Gradiens becslese egy pontban numerikus derivalassal
     vec3 estimateGradient(vec3 p) {
         return normalize(vec3(
-        dist(p + vec3(epsilon, 0, 0)) - dist(p - vec3(epsilon, 0, 0)),
-        dist(p + vec3(0, epsilon, 0)) - dist(p - vec3(0, epsilon, 0)),
-        dist(p + vec3(0, 0, epsilon)) - dist(p - vec3(0, 0, epsilon))));
+        length(p + vec3(epsilon, 0, 0)) - length(p - vec3(epsilon, 0, 0)),
+        length(p + vec3(0, epsilon, 0)) - length(p - vec3(0, epsilon, 0)),
+        length(p + vec3(0, 0, epsilon)) - length(p - vec3(0, 0, epsilon))));
     }
   
   float intersectClippedQuadric(mat4 A, vec4 e, vec4 d, mat4 B){

@@ -48,7 +48,7 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         }
     }
 
-    //Gradiens becslese egy pontban numerikus derivalassal
+
     vec3 surfaceNormal(vec4 p, mat4 quadrics) {
         float a = quadrics[0][0];
         quadrics[0][0] = 0.0;
@@ -68,6 +68,16 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         float fz = (pz * quadrics + quadrics * pz)[0] + 2.0*k*p[2];
         quadrics[2][2] = k;
         return normalize(vec3(fx, fy, fz));
+    }
+
+    vec3 surfaceNormalSide(vec4 p, mat4 quadrics, vec4 d){
+        vec3 N = surfaceNormal(p, quadrics);
+        vec4 N4 = vec4(N, 0.0);
+        if (dot(d, N4) > 0.0){
+            return -1.0 * N;
+        } else {
+            return N;
+        }
     }
   
   float intersectClippedQuadric(mat4 A, vec4 e, vec4 d, mat4 B){
@@ -101,19 +111,22 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
   }
 
   void main() { 
+    vec4 lightDir4 = vec4(lightDir, 0.0);
     vec4 d = vec4(normalize(rayDir.xyz), 0.0);
     vec4 e = eyePosition;
     int quadricIndex;
 	float t = findBestHit(e, d, quadricIndex);
 	fragmentColor = vec4(1, 1, 1, 1);
 	if (t > 0.0) {
-        vec3 N = surfaceNormal(e + t*d, quadrics[quadricIndex]);
-        float I = dot(N, lightDir);
-        if (I > 0.0){
-            fragmentColor = vec4(objectColor * I, 1);
-        } else {
-            fragmentColor = vec4(0, 0, 0, 1);
+        vec4 p = e + t*d;
+        vec3 N = surfaceNormalSide(p, quadrics[quadricIndex], d);
+        int tmp;
+        float lightT = findBestHit(p + 1.0*vec4(N, 0.0), -1.0 * lightDir4, tmp);
+        float intensity = 0.0;
+        if (lightT < 0.0) {
+            intensity = dot(N, lightDir);
         }
+        fragmentColor = vec4(objectColor * intensity, 1);
 	}
   }
 `;

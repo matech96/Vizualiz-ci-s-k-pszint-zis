@@ -60,7 +60,14 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         quadrics[1][1] = 0.0;
         vec4 py = vec4(0, 1, 0, 0);
         float fy = (py * quadrics + quadrics * py)[0] + 2.0*f*p[1];
-        return normalize(vec3(fx, fy, -1));
+        quadrics[1][1] = f;
+
+        float k = quadrics[2][2];
+        quadrics[2][2] = 0.0;
+        vec4 pz = vec4(0, 0, 1, 0);
+        float fz = (pz * quadrics + quadrics * pz)[0] + 2.0*k*p[2];
+        quadrics[2][2] = k;
+        return normalize(vec3(fx, fy, fz));
     }
   
   float intersectClippedQuadric(mat4 A, vec4 e, vec4 d, mat4 B){

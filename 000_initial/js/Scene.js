@@ -32,30 +32,12 @@ Scene.prototype.update = function(gl, keysPressed) {
   
   this.traceProgram.rayDirMatrix.set(this.camera.rayDirMatrix);
   this.traceProgram.eyePosition.set(this.camera.position);
-  //shape
-  this.traceProgram.quadrics.at(0).set(
-    1, 0, 0, 0,
-    0, 1, 0, 0,
-    0, 0, 1, 0,
-    0, 0, 0, -10);
-  //clipper
-  this.traceProgram.clippers.at(0).set(
-    0, 0, 0, 0,
-    0, 0, 0, 0,
-    0, 0, 0, 0,
-    0, 0, 0, 0);
-    //shape
-    this.traceProgram.quadrics.at(1).set(
-      1, 0, 0, 0,
-      0, 0, 0, 0,
-      0, 0, 1, 0,
-      0, 0, 0, -1);
-    //clipper
-    this.traceProgram.clippers.at(1).set(
-      0, 0, 0, 0,
-      0, 0, 0, 0,
-      0, 0, 0, 0,
-      0, 0, 0, 0);
+  const orange = new ClippedQuadric(
+    this.traceProgram.quadrics.at(0),
+    this.traceProgram.clippers.at(0));
+
+  orange.setUnitCylinder();
+
 
   this.traceProgram.commit();
   this.quadGeometry.draw();

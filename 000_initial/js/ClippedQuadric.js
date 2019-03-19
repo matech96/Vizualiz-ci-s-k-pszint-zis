@@ -13,11 +13,15 @@ ClippedQuadric.prototype.setUnitSphere = function(){
 		0, 1, 0, 0,
 		0, 0, 0, 0,
 		0, 0, 0, -1);
-  this.reflective.set(-1,0,0,0);
 }
 
-ClippedQuadric.prototype.translate = function(x,y,z){
-  this.A.translate((x,y,z));
-  this.B.translate((x,y,z));
+ClippedQuadric.prototype.setUnitCylinder = function(){
+  this.A.set(1, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 1, 0,
+      0, 0, 0, -10);
+  this.B.set(0, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, -10);
 }
-

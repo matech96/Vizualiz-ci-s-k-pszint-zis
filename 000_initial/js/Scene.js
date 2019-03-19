@@ -36,7 +36,13 @@ Scene.prototype.update = function(gl, keysPressed) {
     this.traceProgram.quadrics.at(0),
     this.traceProgram.clippers.at(0));
 
-  orange.setUnitCylinder();
+  orange.setCylinder(10, 10);
+
+  const big = new ClippedQuadric(
+    this.traceProgram.quadrics.at(1),
+    this.traceProgram.clippers.at(1));
+
+  big.setCylinder(5, 100);
 
 
   this.traceProgram.commit();

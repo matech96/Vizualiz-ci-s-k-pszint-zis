@@ -12,7 +12,7 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
     out vec4 fragmentColor;
 
     vec3 objectColor = vec3(0, 1, 0);
-    vec3 lightDir = vec3(1, 0, 0);
+    vec3 lightDir = vec3(-1, -1, 0);
     //Sphere tracing leallasi kriteriuma 
     float epsilon = 0.001;
 
@@ -121,10 +121,10 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         vec4 p = e + t*d;
         vec3 N = surfaceNormalSide(p, quadrics[quadricIndex], d);
         int tmp;
-        float lightT = findBestHit(p + 1.0*vec4(N, 0.0), -1.0 * lightDir4, tmp);
+        float lightT = findBestHit(p + epsilon*vec4(N, 0.0), -1.0 * lightDir4, tmp);
         float intensity = 0.0;
         if (lightT < 0.0) {
-            intensity = dot(N, lightDir);
+            intensity = dot(N, -1.0 * lightDir);
         }
         fragmentColor = vec4(objectColor * intensity, 1);
 	}

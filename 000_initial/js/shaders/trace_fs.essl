@@ -11,7 +11,7 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
 
     out vec4 fragmentColor;
 
-    vec4 objectColor = vec4(0, 1, 0, 0);
+    vec4 objectColor = vec4(0, 1, 0, 1);
     vec4 lightDir = vec4(0, 0, 1, 0);
     //Sphere tracing leallasi kriteriuma 
     float epsilon = 0.001;
@@ -151,48 +151,7 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
 	if (t > 0.0) {
 		vec4 hit = (t * rayDir) + eyePosition;
         mat4 A = quadrics[quadricIndex];
-		vec3 normal = normalize( (hit * A + A * hit).xyz );
-		fragmentColor = vec4((objectColor * dot(vec4(normal, 1), lightDir)).xyz, 1);
+		fragmentColor = objectColor;
 	}
   }
-
-
-/*
-    //Fragment shader kod.
-    void main(void) {
-        //Eredeti szinezes:
-        //fragmentColor = vec4(0, 1, 0, 1);
-
-        //Uj hatterszin (sajat valasztas):
-        fragmentColor = vec4(normalize(rayDir.xyz + eyePosition.xyz + vec3(1,1,1)), 1);
-
-        //Sugar haladasi iranya
-        vec3 dir = normalize(rayDir.xyz);
-        //Sugar pillanatnyi pozicioja
-        vec3 p = eyePosition.xyz;
-        //Pillanatnyi tavolsag a kirajzolando objektumtol
-        float d = dist(p);
-
-        //Sugarkovetesi iteracio:
-        for (int i = 1; i < 50; i++) {
-            //Leptetjuk a poziciot,
-            p = p + d*dir;
-            //kiszamitjuk az uj tavolsagot,
-            d = dist(p);
-            //ha elegge kicsi, eltalaltuk az objektumot.
-            if (d < epsilon) {
-                //Az eltalalt objektum feluletenek normalvektora szerint akarjuk most szinezni a pixelt.
-
-                //Gomb eseten lehetne egyszeruen igy szinezni:
-                //fragmentColor = vec4(normalize(p.xyz), 1);
-
-                //Egyebekent a tavolsagfuggveny gradiense a normalvektor:
-                fragmentColor.xyz = estimateGradient(p);
-
-                //Kilepunk a ciklusbol.
-                break;
-            }
-        }
-    }
-	*/
 `;

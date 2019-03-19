@@ -37,7 +37,7 @@ Scene.prototype.update = function(gl, keysPressed) {
     1, 0, 0, 0,
     0, 1, 0, 0,
     0, 0, 1, 0,
-    0, 0, 0, -2);
+    0, 0, 0, -10);
   //clipper
   this.traceProgram.clippers.at(0).set(
     0, 0, 0, 0,
@@ -52,12 +52,10 @@ Scene.prototype.update = function(gl, keysPressed) {
       0, 0, 0, -1);
     //clipper
     this.traceProgram.clippers.at(1).set(
-      1, 0, 0, 0,
       0, 0, 0, 0,
-      0, 0, 1, 0,
-      0, 0, 0, -1).scale(0.5, 2, 0.9);
-
-
+      0, 0, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, 0);
 
   this.traceProgram.commit();
   this.quadGeometry.draw();

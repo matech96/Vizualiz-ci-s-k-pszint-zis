@@ -16,21 +16,6 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
     //Sphere tracing leallasi kriteriuma 
     float epsilon = 0.001;
 
-
-    //
-    //Gomb rajzolasahoz 
-    //
-    
-    //Tavolsagfuggveny 1 sugaru gombhoz.
-    float distSph(vec3 p) {
-        return length(p)-1.0;
-    }
-
-
-    //
-    //Julia-fraktal rajzolasahoz 
-    //
-    
     //Kvaternio szorzas
     vec4 quatMult( vec4 q1, vec4 q2 ) {
         vec4 r;
@@ -63,7 +48,6 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         }
     }
 
-    //A Julia tavolsagfuggvenye
     float distJulia(vec3 p) {
         vec4 z = vec4( p, 0.0 );
         vec4 zp = vec4( 1, 0.0, 0.0, 0.0 );
@@ -72,9 +56,6 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         return 0.5 * normZ * log( normZ ) / length( zp );
     }
 
-
-
-    //Altalanos tavolsagfuggveny, hogy ne a lenti kodot kelljen atirni
     float dist(vec3 p) {
         return distJulia(p);
         //return distSph(p);
@@ -87,16 +68,6 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         dist(p + vec3(0, epsilon, 0)) - dist(p - vec3(0, epsilon, 0)),
         dist(p + vec3(0, 0, epsilon)) - dist(p - vec3(0, 0, epsilon))));
     }
-
-  float intersectQuadric(mat4 A, vec4 e, vec4 d){
-	float a = dot(d * A, d);
-	float b = dot(d * A, e) + dot(e * A, d);
-	float c = dot(e * A, e);
-	float D = sqrt(b*b-4.0*a*c);
-	float t1 = (-b + D) / (2.0*a);
-	float t2 = (-b - D) / (2.0*a);
-	return (t1<0.0)?t2:((t2<0.0)?t1:min(t1, t2));
-  }
   
   float intersectClippedQuadric(mat4 A, vec4 e, vec4 d, mat4 B){
 	float a = dot(d * A, d);
@@ -117,16 +88,13 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
   }
 
   float findBestHit(vec4 e, vec4 d, out int bestQuadricIndex){
-    float bestT = 1e6;
+    float bestT = -1.0;
     for(int i = 0; i < 16; i++){
         float t = intersectClippedQuadric(quadrics[i], e, d, clippers[i]);
-        if (t < bestT) {
+        if(t > 0.0 && (bestT < 0.0 || t < bestT)){
             bestT = t;
             bestQuadricIndex = i;
         }
-    }
-    if (bestT > 1e6-1.0){
-        bestT = -1.0;
     }
     return bestT;
   }
@@ -134,23 +102,10 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
   void main() { 
     vec4 d = vec4(normalize(rayDir.xyz), 0.0);
     vec4 e = eyePosition;
-	//mat4 A = quadrics[0]; 
-    /*mat4(	1, 0, 0, 0,
-                    0, 0, 0, 0,
-                    0, 0, 1, 0,
-                    0, 0, 0, -9	);*/
-    //mat4 B = clippers[0];
-    /*mat4(	1, 0, 0, 0,
-                    0, 0, 0, 0,
-                    0, 0, 1, 0,
-                    0, 0, 0, -9);*/
-
     int quadricIndex;
 	float t = findBestHit(e, d, quadricIndex);
 	fragmentColor = vec4(1, 1, 1, 1);
 	if (t > 0.0) {
-		vec4 hit = (t * rayDir) + eyePosition;
-        mat4 A = quadrics[quadricIndex];
 		fragmentColor = objectColor;
 	}
   }

@@ -51,17 +51,17 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
     //Gradiens becslese egy pontban numerikus derivalassal
     vec3 surfaceNormal(vec4 p, mat4 quadrics) {
         float a = quadrics[0][0];
-        float b = quadrics[0][1];
-        float c = quadrics[0][2];
-        float d = quadrics[0][3];
-        float e = quadrics[1][0];
+        float b = quadrics[1][0];
+        float c = quadrics[2][0];
+        float d = quadrics[3][0];
+        float e = quadrics[0][1];
         float f = quadrics[1][1];
-        float g = quadrics[1][2];
-        float h = quadrics[1][3];
-        float i = quadrics[2][0];
-        float m = quadrics[3][0];
-        float j = quadrics[2][1];
-        float n = quadrics[3][1];
+        float g = quadrics[2][1];
+        float h = quadrics[3][1];
+        float i = quadrics[0][2];
+        float m = quadrics[0][3];
+        float j = quadrics[1][2];
+        float n = quadrics[1][3];
         float fx = length(dot(vec4(a, e, i, m), p) + dot(vec4(a, b, c, d), p));
         float fy = length(dot(vec4(b, f, j, n), p) + dot(vec4(e, f, g, h), p));
         return normalize(vec3(fx, fy, -1));

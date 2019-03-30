@@ -12,7 +12,8 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
     out vec4 fragmentColor;
 
     vec3 objectColor = vec3(0, 1, 0);
-    vec3 lightDir = vec3(-1, -1, 0);
+    vec3 lightPoint = vec3(2.7, 0, 0);
+    float lightPower = 1000.0;
     //Sphere tracing leallasi kriteriuma 
     float epsilon = 0.001;
 
@@ -70,20 +71,20 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         return normalize(vec3(fx, fy, fz));
     }
 
-    vec3 surfaceNormalSide(vec4 p, mat4 quadrics, vec4 d){
+    vec4 surfaceNormalSide(vec4 p, mat4 quadrics, vec4 d){
         vec3 N = surfaceNormal(p, quadrics);
         vec4 N4 = vec4(N, 0.0);
         if (dot(d, N4) > 0.0){
-            return -1.0 * N;
+            return -1.0 * N4;
         } else {
-            return N;
+            return N4;
         }
     }
 
-    vec3 reflect(vec3 v, vec3 N)
-    {
-      return v - N * N.dot(v) * 2.0;
-    };
+    // vec3 reflect(vec3 v, vec3 N)
+    // {
+    //   return v - N * N.dot(v) * 2.0;
+    // };
 
     vec3 shade(
         vec3 kd,
@@ -99,21 +100,21 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         }
     }
 
-    vec3 shade( vec4 ksg,
-        vec3 normal, vec3 viewDir,
-        vec3 lightDir, vec3 lightPowerDensity){
-        float cosTheta = dot(normal, lightDir);
-        if(cosTheta < 0) {
-            return vec3(0.0,0.0,0.0);
-        }
-        vec3 halfway = normalize(viewDir + lightDir);
-        float cosDelta = dot(normal,  halfway);
-        if(cosDelta < 0) {
-            return vec3(0.0,0.0,0.0);
-        } else{
-            return lightPowerDensity * ksg.xyz * pow(cosDelta, ksg.w);
-        }
-    }
+    // vec3 shade( vec4 ksg,
+    //     vec3 normal, vec3 viewDir,
+    //     vec3 lightDir, vec3 lightPowerDensity){
+    //     float cosTheta = dot(normal, lightDir);
+    //     if(cosTheta < 0) {
+    //         return vec3(0.0,0.0,0.0);
+    //     }
+    //     vec3 halfway = normalize(viewDir + lightDir);
+    //     float cosDelta = dot(normal,  halfway);
+    //     if(cosDelta < 0) {
+    //         return vec3(0.0,0.0,0.0);
+    //     } else{
+    //         return lightPowerDensity * ksg.xyz * pow(cosDelta, ksg.w);
+    //     }
+    // }
 
 
 
@@ -149,7 +150,7 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
   }
 
   void main() { 
-    vec4 lightDir4 = vec4(lightDir, 0.0);
+    vec4 lightPoint4 = vec4(lightPoint, 0.0);
     vec4 d = vec4(normalize(rayDir.xyz), 0.0);
     vec4 e = eyePosition;
     int quadricIndex;
@@ -157,12 +158,18 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
 	fragmentColor = vec4(1, 1, 1, 1);
 	if (t > 0.0) {
         vec4 p = e + t*d;
-        vec3 N = surfaceNormalSide(p, quadrics[quadricIndex], d);
-        int tmp;
-        float lightT = findBestHit(p + epsilon*vec4(N, 0.0), -1.0 * lightDir4, tmp);
+        vec4 N = surfaceNormalSide(p, quadrics[quadricIndex], d);
+        vec4 lightDir = lightPoint4 - p;
+        vec4 lightDirNorm = vec4(normalize(lightDir.xyz), 0.0);
+        int lightQuadraticIndex;
+        // float lightT = findBestHit(lightPoint4, -1.0 * lightDirNorm, lightQuadraticIndex);
+        float lightT = findBestHit(p + epsilon*N, lightDirNorm, lightQuadraticIndex);
         float intensity = 0.0;
-        if (lightT < 0.0) {
-            intensity = dot(N, -1.0 * lightDir);
+        float lightDist = dot(lightDir, lightDir);
+        //lightQuadraticIndex == quadricIndex && length(lightPoint4 - (lightT*lightDirNorm) - p) < 1000000.0*epsilon
+        //lightT < 0.0 || lightDist < lightT
+        if (lightT < 0.0 ||     sqrt(lightDist) < lightT) {
+            intensity = dot(N, lightDirNorm) * lightPower / (4.0*3.14*lightDist);
         }
         fragmentColor = vec4(objectColor * intensity, 1);
 	}

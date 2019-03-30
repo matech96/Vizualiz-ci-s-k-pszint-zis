@@ -17,6 +17,30 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
     //Sphere tracing leallasi kriteriuma 
     float epsilon = 0.001;
 
+    vec3 DReflect(vec3 inDir, vec3 normal) {
+        return inDir - normal * dot(normal, inDir) * 2.0;
+    }
+
+    vec3 DRefract(vec3 inDir, vec3 normal, float refractiveIndex) {
+        float ri = refractiveIndex;
+        float cosa = - dot(normal, inDir);
+        if (cosa < 0.0) { cosa = -cosa; normal = -normal; ri = 1.0/ri; }      
+        float disc = 1.0 - (1.0 - cosa * cosa) / ri / ri;       
+        if (disc < 0.0) return reflect(inDir, normal);
+        return inDir * (1.0/ri) + normal * (cosa / ri - sqrt(disc)) ;
+    }
+
+    vec3 IReflect(vec3 inDir, vec3 normal, vec3 minReflectance) {
+        float cosa = abs(dot(normal, inDir));
+        return minReflectance + (1.0-minReflectance)*pow( 1.0-cosa, 5.0 ); 
+    }
+
+    vec3 IRefract(vec3 inDir, vec3 normal, vec3 minReflectance) {
+        return vec3(1.0, 1.0, 1.0) - IReflect(inDir, normal, minReflectance); 
+    }
+
+
+
     //Kvaternio szorzas
     vec4 quatMult( vec4 q1, vec4 q2 ) {
         vec4 r;
@@ -80,11 +104,6 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
             return N4;
         }
     }
-
-    // vec3 reflect(vec3 v, vec3 N)
-    // {
-    //   return v - N * N.dot(v) * 2.0;
-    // };
 
     vec3 shade(
         vec3 kd,

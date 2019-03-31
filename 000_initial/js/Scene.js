@@ -44,6 +44,13 @@ Scene.prototype.update = function(gl, keysPressed) {
 
   big.setCylinder(5, 100);
 
+  const ball = new ClippedQuadric(
+    this.traceProgram.quadrics.at(2),
+    this.traceProgram.clippers.at(2));
+
+  ball.setUnitSphere();
+  ball.translate(0, 0, 10);
+
 
   this.traceProgram.commit();
   this.quadGeometry.draw();

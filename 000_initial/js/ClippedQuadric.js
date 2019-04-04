@@ -4,15 +4,15 @@ const ClippedQuadric = function(A, B, reflective = false) {
   this.reflective = reflective;
 }
 
-ClippedQuadric.prototype.setUnitSphere = function(){
-  this.A.set(	1, 0, 0, 0,
-		0, 1, 0, 0,
+ClippedQuadric.prototype.setUnitSphere = function(h, v){
+  this.A.set(	1, 0, 0, -(2*h),
+		0, 1, 0, -2*v,
 		0, 0, 1, 0,
-		0, 0, 0, -1);
+		0, 0, 0, -1+(h*h)+(v*v));
   this.B.set(	0, 0, 0, 0,
-		0, 1, 0, 0,
 		0, 0, 0, 0,
-		0, 0, 0, -1);
+		0, 0, 0, 0,
+		0, 0, 0, 0);
 }
 
   ClippedQuadric.prototype.setCylinder = function(diaginal, height){
@@ -26,7 +26,13 @@ ClippedQuadric.prototype.setUnitSphere = function(){
       0, 0, 0, -1*height);
   }
 
-  ClippedQuadric.prototype.translate = function(x,y,z){
-    this.A.translate(x, y, z);
-    this.B.translate(x, y, z);
+  ClippedQuadric.prototype.setWalls = function(){
+    this.A.set(-20, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1000);
+    this.B.set(0, 0, 0, 0,
+      0, 1, 0, 0,
+      0, 0, 0, 0,
+      0, 0, 0, -1);
   }

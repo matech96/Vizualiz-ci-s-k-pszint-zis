@@ -12,8 +12,8 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
     out vec4 fragmentColor;
 
     vec3 objectColor = vec3(0, 1, 0);
-    vec3 lightPoint = vec3(10, 0, 0);
-    float lightPower = 700.0;
+    vec3 lightPoint = vec3(2, 2, 0);
+    float lightPower = 200.0;
     //Sphere tracing leallasi kriteriuma 
     float epsilon = 0.001;
 
@@ -74,34 +74,85 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
     }
 
 
-    vec3 surfaceNormal(vec4 p, mat4 quadrics) {
-        float a = quadrics[0][0];
-        quadrics[0][0] = 0.0;
-        vec4 px = vec4(1, 0, 0, 0);
-        float fx = (px * quadrics + quadrics * px)[0] + 2.0*a*p[0];
-        quadrics[0][0] = a;
+    vec3 surfaceNormal(vec4 v, mat4 quadric) {
+        // float a = quadric[0][0];
+        // float b = quadric[1][0];
+        // float c = quadric[2][0];
+        // float d = quadric[3][0];
+        // float e = quadric[0][1];
+        // float f = quadric[1][1];
+        // float g = quadric[2][1];
+        // float h = quadric[3][1];
+        // float i = quadric[0][2];
+        // float j = quadric[1][2];
+        // float k = quadric[2][2];
+        // float l = quadric[3][2];
+        // float m = quadric[0][3];
+        // float n = quadric[1][3];
+        // float o = quadric[2][3];
+        // float p = quadric[3][3];
 
-        float f = quadrics[1][1];
-        quadrics[1][1] = 0.0;
-        vec4 py = vec4(0, 1, 0, 0);
-        float fy = (py * quadrics + quadrics * py)[0] + 2.0*f*p[1];
-        quadrics[1][1] = f;
 
-        float k = quadrics[2][2];
-        quadrics[2][2] = 0.0;
-        vec4 pz = vec4(0, 0, 1, 0);
-        float fz = (pz * quadrics + quadrics * pz)[0] + 2.0*k*p[2];
-        quadrics[2][2] = k;
+        float a = quadric[0][0];
+        float b = quadric[0][1];
+        float c = quadric[0][2];
+        float d = quadric[0][3];
+        float e = quadric[1][0];
+        float f = quadric[1][1];
+        float g = quadric[1][2];
+        float h = quadric[1][3];
+        float i = quadric[2][0];
+        float j = quadric[2][1];
+        float k = quadric[2][2];
+        float l = quadric[2][3];
+        float m = quadric[3][0];
+        float n = quadric[3][1];
+        float o = quadric[3][2];
+        float p = quadric[3][3];
+
+        v[3] = 1.0;
+        float fx = dot(vec4(a, e, i, m), v) + dot(vec4(a, b, c, d), v);
+        float fy = dot(vec4(b, f, j, n), v) + dot(vec4(e, f, g, h), v);
+        float fz = dot(vec4(c, g, k, o), v) + dot(vec4(i, j, k, l), v);
         return normalize(vec3(fx, fy, fz));
+
+        // float fx = length(dot(vec4(a, e, i, m), v) + dot(vec4(a, b, c, d), v));
+        // float fy = length(dot(vec4(b, f, j, n), v) + dot(vec4(e, f, g, h), v));
+        // float fz = length(dot(vec4(c, g, k, o), v) + dot(vec4(i, j, k, l), v));
+        // return normalize(vec3(fx, fy, fz));
+
+        // quadric[3][0] = 0.0;
+        // quadric[3][1] = 0.0;
+        // quadric[3][3] = 0.0;
+        // float a = quadric[0][0];
+        // quadric[0][0] = 0.0;
+        // vec4 px = vec4(1, 0, 0, 0);
+        // float fx = (px * quadric + quadric * px)[0] + 2.0*a*p[0];
+        // quadric[0][0] = a;
+
+        // float f = quadric[1][1];
+        // quadric[1][1] = 0.0;
+        // vec4 py = vec4(0, 1, 0, 0);
+        // float fy = (py * quadric + quadric * py)[0] + 2.0*f*p[1];
+        // quadric[1][1] = f;
+
+        // float k = quadric[2][2];
+        // quadric[2][2] = 0.0;
+        // vec4 pz = vec4(0, 0, 1, 0);
+        // float fz = (pz * quadric + quadric * pz)[0] + 2.0*k*p[2];
+        // quadric[2][2] = k;
+        // return normalize(vec3(fx, fy, fz));
     }
 
-    vec4 surfaceNormalSide(vec4 p, mat4 quadrics, vec4 d){
-        vec3 N = surfaceNormal(p, quadrics);
+    vec4 surfaceNormalSide(vec4 p, mat4 quadric, vec4 d){
+        vec3 N = surfaceNormal(p, quadric);
         vec4 N4 = vec4(N, 0.0);
-        if (dot(d, N4) > 0.0){
-            return -1.0 * N4;
+        if (dot(d.xyz, N4.xyz) > 0.0){
+            return -1.0 * N4; 
+            // return vec4(1, 0, 0, 1);
         } else {
-            return N4;
+            return N4; 
+            // return vec4(0, 1, 0, 1);
         }
     }
 
@@ -177,17 +228,29 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
 	fragmentColor = vec4(1, 1, 1, 1);
 	if (t > 0.0) {
         vec4 p = e + t*d;
+        // p = vec4(p[0], 0, 0, 1);
         vec4 N = surfaceNormalSide(p, quadrics[quadricIndex], d);
         vec4 lightDir = lightPoint4 - p;
+        float lightDist = dot(lightDir, lightDir);
         vec4 lightDirNorm = vec4(normalize(lightDir.xyz), 0.0);
         int lightQuadraticIndex;
         float lightT = findBestHit(p + epsilon*N, lightDirNorm, lightQuadraticIndex);
         float intensity = 0.0;
-        float lightDist = dot(lightDir, lightDir);
-        if (lightT < 0.0 || lightDist < lightT * lightT) {
+        if (lightT < 0.0 || lightDist < (lightT * lightT)) {
             intensity = dot(N, lightDirNorm) * lightPower / (4.0*3.14*lightDist);
         }
         fragmentColor = vec4(objectColor * intensity, 1);
+        // fragmentColor = vec4(length(lightDir), 0,0 ,1);
+        // fragmentColor = vec4(((float(lightQuadraticIndex)*1.0)+1.0)/5.0, 0,0 ,1);
+        // fragmentColor = vec4(lightT/ sqrt(lightDist), 0,0 ,1);
+        // fragmentColor = vec4(lightDir.xyz, 1);
+
+        
+
+        // fragmentColor = vec4(N[0], 0, 0, 1);
+        // fragmentColor = vec4(p[0], 0, 0, 1);
+        // fragmentColor = vec4(p.xyz, 1);
+        // fragmentColor = vec4(N.xyz, 1);
 	}
   }
 `;

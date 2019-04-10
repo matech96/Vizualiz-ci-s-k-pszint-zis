@@ -39,60 +39,7 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         return vec3(1.0, 1.0, 1.0) - IReflect(inDir, normal, minReflectance); 
     }
 
-
-
-    //Kvaternio szorzas
-    vec4 quatMult( vec4 q1, vec4 q2 ) {
-        vec4 r;
-
-        r.x   = q1.x * q2.x - dot( q1.yzw, q2.yzw );
-        r.yzw = q1.x * q2.yzw + q2.x * q1.yzw + cross( q1.yzw, q2.yzw );
-
-        return r;
-    }
-
-    //Kvaternio negyzet
-    vec4 quatSq( vec4 q ) {
-        vec4 r;
-
-        r.x   = q.x * q.x - dot( q.yzw, q.yzw );
-        r.yzw = 2.0 * q.x * q.yzw;
-
-        return r;
-    }
-
-    //Valami
-    void iterateIntersect( inout vec4 q, inout vec4 qp) {
-        for( int i = 0; i < 10; i++ ) {
-            qp = 2.0 * quatMult(q, qp);
-            q = quatSq(q) + vec4(1, 0.5, -0.1, 0.3);
-
-            if( dot( q, q ) > 7.0 ) {
-                break;
-            }
-        }
-    }
-
-
     vec3 surfaceNormal(vec4 v, mat4 quadric) {
-        // float a = quadric[0][0];
-        // float b = quadric[1][0];
-        // float c = quadric[2][0];
-        // float d = quadric[3][0];
-        // float e = quadric[0][1];
-        // float f = quadric[1][1];
-        // float g = quadric[2][1];
-        // float h = quadric[3][1];
-        // float i = quadric[0][2];
-        // float j = quadric[1][2];
-        // float k = quadric[2][2];
-        // float l = quadric[3][2];
-        // float m = quadric[0][3];
-        // float n = quadric[1][3];
-        // float o = quadric[2][3];
-        // float p = quadric[3][3];
-
-
         float a = quadric[0][0];
         float b = quadric[0][1];
         float c = quadric[0][2];
@@ -115,33 +62,6 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         float fy = dot(vec4(b, f, j, n), v) + dot(vec4(e, f, g, h), v);
         float fz = dot(vec4(c, g, k, o), v) + dot(vec4(i, j, k, l), v);
         return normalize(vec3(fx, fy, fz));
-
-        // float fx = length(dot(vec4(a, e, i, m), v) + dot(vec4(a, b, c, d), v));
-        // float fy = length(dot(vec4(b, f, j, n), v) + dot(vec4(e, f, g, h), v));
-        // float fz = length(dot(vec4(c, g, k, o), v) + dot(vec4(i, j, k, l), v));
-        // return normalize(vec3(fx, fy, fz));
-
-        // quadric[3][0] = 0.0;
-        // quadric[3][1] = 0.0;
-        // quadric[3][3] = 0.0;
-        // float a = quadric[0][0];
-        // quadric[0][0] = 0.0;
-        // vec4 px = vec4(1, 0, 0, 0);
-        // float fx = (px * quadric + quadric * px)[0] + 2.0*a*p[0];
-        // quadric[0][0] = a;
-
-        // float f = quadric[1][1];
-        // quadric[1][1] = 0.0;
-        // vec4 py = vec4(0, 1, 0, 0);
-        // float fy = (py * quadric + quadric * py)[0] + 2.0*f*p[1];
-        // quadric[1][1] = f;
-
-        // float k = quadric[2][2];
-        // quadric[2][2] = 0.0;
-        // vec4 pz = vec4(0, 0, 1, 0);
-        // float fz = (pz * quadric + quadric * pz)[0] + 2.0*k*p[2];
-        // quadric[2][2] = k;
-        // return normalize(vec3(fx, fy, fz));
     }
 
     vec4 surfaceNormalSide(vec4 p, mat4 quadric, vec4 d){
@@ -240,17 +160,6 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
             intensity = dot(N, lightDirNorm) * lightPower / (4.0*3.14*lightDist);
         }
         fragmentColor = vec4(objectColor * intensity, 1);
-        // fragmentColor = vec4(length(lightDir), 0,0 ,1);
-        // fragmentColor = vec4(((float(lightQuadraticIndex)*1.0)+1.0)/5.0, 0,0 ,1);
-        // fragmentColor = vec4(lightT/ sqrt(lightDist), 0,0 ,1);
-        // fragmentColor = vec4(lightDir.xyz, 1);
-
-        
-
-        // fragmentColor = vec4(N[0], 0, 0, 1);
-        // fragmentColor = vec4(p[0], 0, 0, 1);
-        // fragmentColor = vec4(p.xyz, 1);
-        // fragmentColor = vec4(N.xyz, 1);
 	}
   }
 `;

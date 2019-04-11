@@ -4,7 +4,8 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
     uniform vec4 eyePosition;
     uniform mat4 quadrics[16];
     uniform mat4 clippers[16];
-    uniform vec4 brdfs[16]; // 0 - minReflectence abs() < 1
+    uniform vec4 brdfs[16]; 
+    uniform float reflectance[16];
 
     uniform samplerCube background;
 
@@ -135,6 +136,22 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         }
     }
     return bestT;
+  }
+
+  vec4 relfectRefract(vec4 e, vec4 d){
+    int quadricIndex;
+    float t = findBestHit(e, d, quadricIndex);
+    if (t > 0.0) {
+        vec4 p = e + t*d;
+        vec4 N = surfaceNormalSide(p, quadrics[quadricIndex], d);
+        float minReflectence = brdfs[quadricIndex][0];
+        if (minReflectence > 0.0) {
+            vec4 reflectD = vec4(DReflect(d.xyz, N.xyz), 0.0);
+            //vec4 color = relfectRefract(p, reflectD);
+        }
+    } else {
+        return vec4(texture(background, d.xyz).rgb, 1);
+    }
   }
 
   void main() { 

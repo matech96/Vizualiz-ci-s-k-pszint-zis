@@ -6,6 +6,7 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
     uniform mat4 clippers[16];
     uniform vec4 brdfs[16]; // 0 - minReflectence abs() < 1
 
+    uniform samplerCube background;
 
     in vec4 rayDir;
 
@@ -142,7 +143,7 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
     vec4 e = eyePosition;
     int quadricIndex;
 	float t = findBestHit(e, d, quadricIndex);
-	fragmentColor = vec4(1, 1, 1, 1);
+    fragmentColor = vec4(texture(background, d.xyz).rgb, 1);
 	if (t > 0.0) {
         vec4 p = e + t*d;
         vec4 N = surfaceNormalSide(p, quadrics[quadricIndex], d);

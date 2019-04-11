@@ -9,6 +9,14 @@ const Scene = function(gl) {
   this.timeAtLastFrame = this.timeAtFirstFrame;
 
   this.camera = new PerspectiveCamera();
+  
+  this.background = new TextureCube(gl, [
+    "media/posx.jpg",
+    "media/negx.jpg",
+    "media/posy.jpg",
+    "media/negy.jpg",
+    "media/posz.jpg",
+    "media/negz.jpg",]);
 };
 
 Scene.prototype.update = function(gl, keysPressed) {
@@ -81,6 +89,7 @@ Scene.prototype.update = function(gl, keysPressed) {
 
   ballCenter.setUnitSphere(0, 0);
 
+  this.traceProgram.background.set(this.background);
 
   this.traceProgram.commit();
   this.quadGeometry.draw();

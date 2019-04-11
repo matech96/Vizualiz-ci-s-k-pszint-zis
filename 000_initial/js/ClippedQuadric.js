@@ -1,7 +1,7 @@
-const ClippedQuadric = function(A, B, reflective = false) {
+const ClippedQuadric = function(A, B, brdfs) {
   this.A = A;
   this.B = B;
-  this.reflective = reflective;
+  this.brdfs = brdfs;
 }
 
 ClippedQuadric.prototype.setUnitSphere = function(h, v){

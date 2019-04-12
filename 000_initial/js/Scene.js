@@ -81,6 +81,7 @@ Scene.prototype.update = function(gl, keysPressed) {
     this.traceProgram.reflectance.at(3));
 
   ballLeft.setUnitSphere(-2, 0);
+  ballLeft.reflectance.set(1,1,1);
 
   const ballCenter = new ClippedQuadric(
     this.traceProgram.quadrics.at(4),

@@ -89,6 +89,7 @@ Scene.prototype.update = function(gl, keysPressed) {
     this.traceProgram.reflectance.at(4));
 
   ballCenter.setUnitSphere(0, 0);
+  ballCenter.reflectance.set(0.5,0.5,0.5);
 
   this.traceProgram.background.set(this.background);
 

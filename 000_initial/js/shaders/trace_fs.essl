@@ -152,6 +152,46 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         return intensity;
     }
 
+    struct RRPoint
+    {
+        int i = -1;
+        vec4 p;
+        vec4 d;
+    };
+
+    struct RRPointStack
+    {
+        int i;
+        RRPoint data[16];
+    };
+
+    struct ColorStack
+    {
+        int i;
+        vec4 data[16];
+    };
+
+    void RRPointStackPop(RRPointStack s){
+        s.i--;
+    }
+
+    void RRPointStackPush(RRPointStack rs, ColorStack cs, RRPoint e){
+        rs.data[rs.i++] = e;
+        cs.data[cs.i++] = vec4(-1);
+    }
+
+    ColorStack ColorStackCreate(){
+        ColorStack s = ColorStack();
+        for (int i = 0; i < 16; ++i)
+        {
+            s.data[i] = vec4(-1);
+        }
+    }
+
+    void ColorStackPop(ColorStack s){
+        s.i--;
+    }
+
     vec4 relfectRefract(vec4 e, vec4 d){
         vec3 color = vec3(1,1,1);
         for (int i = 0; i < 10; ++i)

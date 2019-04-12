@@ -9,6 +9,14 @@ const Scene = function(gl) {
   this.timeAtLastFrame = this.timeAtFirstFrame;
 
   this.camera = new PerspectiveCamera();
+  
+  this.background = new TextureCube(gl, [
+    "media/posx.jpg",
+    "media/negx.jpg",
+    "media/posy.jpg",
+    "media/negy.jpg",
+    "media/posz.jpg",
+    "media/negz.jpg",]);
 };
 
 Scene.prototype.update = function(gl, keysPressed) {
@@ -32,18 +40,58 @@ Scene.prototype.update = function(gl, keysPressed) {
   
   this.traceProgram.rayDirMatrix.set(this.camera.rayDirMatrix);
   this.traceProgram.eyePosition.set(this.camera.position);
-  const orange = new ClippedQuadric(
+  // const orange = new ClippedQuadric(
+  //   this.traceProgram.quadrics.at(0),
+  //   this.traceProgram.clippers.at(0));
+
+  // orange.setCylinder(10, 10);
+
+  // const big = new ClippedQuadric(
+  //   this.traceProgram.quadrics.at(1),
+  //   this.traceProgram.clippers.at(1));
+
+  // big.setCylinder(5, 100);
+
+
+
+  const ballBehind = new ClippedQuadric(
     this.traceProgram.quadrics.at(0),
-    this.traceProgram.clippers.at(0));
+    this.traceProgram.clippers.at(0),
+    this.traceProgram.reflectance.at(0));
 
-  orange.setCylinder(10, 10);
+  ballBehind.setUnitSphere(0, -2);
 
-  const big = new ClippedQuadric(
+  const ballFront = new ClippedQuadric(
     this.traceProgram.quadrics.at(1),
-    this.traceProgram.clippers.at(1));
+    this.traceProgram.clippers.at(1),
+    this.traceProgram.reflectance.at(1));
 
-  big.setCylinder(5, 100);
+  ballFront.setUnitSphere(0, 2);
 
+  const ballRight = new ClippedQuadric(
+    this.traceProgram.quadrics.at(2),
+    this.traceProgram.clippers.at(2),
+    this.traceProgram.reflectance.at(2));
+
+  ballRight.setUnitSphere(2, 0);
+
+  const ballLeft = new ClippedQuadric(
+    this.traceProgram.quadrics.at(3),
+    this.traceProgram.clippers.at(3),
+    this.traceProgram.reflectance.at(3));
+
+  ballLeft.setUnitSphere(-2, 0);
+  ballLeft.reflectance.set(1,1,1);
+
+  const ballCenter = new ClippedQuadric(
+    this.traceProgram.quadrics.at(4),
+    this.traceProgram.clippers.at(4),
+    this.traceProgram.reflectance.at(4));
+
+  ballCenter.setUnitSphere(0, 0);
+  ballCenter.reflectance.set(0.5,0.5,0.5);
+
+  this.traceProgram.background.set(this.background);
 
   this.traceProgram.commit();
   this.quadGeometry.draw();

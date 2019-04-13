@@ -154,10 +154,10 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
 
     struct RRPoint
     {
-        int i = -1;
+        int i;
         vec4 p;
         vec4 d;
-    };
+    } root;
 
     struct RRPointStack
     {
@@ -180,12 +180,12 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         cs.data[cs.i++] = vec4(-1);
     }
 
-    ColorStack ColorStackCreate(){
-        ColorStack s = ColorStack();
+    ColorStack ColorStackCreate(out ColorStack colorStack){
         for (int i = 0; i < 16; ++i)
         {
-            s.data[i] = vec4(-1);
+            colorStack.data[i] = vec4(-1);
         }
+        return colorStack;
     }
 
     void ColorStackPop(ColorStack s){
@@ -195,7 +195,7 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
     bool goLeft(RRPoint root, out RRPoint rrpoint, out vec4 color){
         vec4 N = surfaceNormalSide(root.p, quadrics[root.i], root.d);
 
-        vec3 minReflectance = reflectance[quadricIndex];
+        vec3 minReflectance = reflectance[root.i];
         if (dot(minReflectance, minReflectance) > 0.0) {
             vec4 reflectD = vec4(DReflect(root.d.xyz, N.xyz), 0.0);
             vec4 e = root.p + epsilon*reflectD;
@@ -203,43 +203,40 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
             float t = findBestHit(e, reflectD, quadricIndex);
             bool isColor = (t <= 0.0);
             if (isColor) {
-                color = vec4(texture(background, d.xyz).rgb, 1);
+                color = vec4(texture(background, reflectD.xyz).rgb, 1);
                 return false;
             }
 
-            rrpoint = RRPoint();
             rrpoint.i = quadricIndex;
             rrpoint.p = e + t*reflectD;
             rrpoint.d = reflectD;
             return true;
         } else {
-            color = diffuseShading(root.p, N);
+            color = vec4(objectColor * diffuseShading(root.p, N),1);
             return false;
         }
     }
 
     vec4 relfectRefract(vec4 e, vec4 d){
+        int quadricIndex;
+        float t = findBestHit(e, d, quadricIndex);
+        if (t < 0.0){
+            return vec4(texture(background, d.xyz).rgb, 1);
+        }
+        root.i = quadricIndex;
+        root.p = e + t*d;
+        root.d = d;
+
         vec3 color = vec3(1,1,1);
         for (int i = 0; i < 10; ++i)
         {
-            int quadricIndex;
-            float t = findBestHit(e, d, quadricIndex);
-            if (t > 0.0) {
-                vec4 p = e + t*d;
-                vec4 N = surfaceNormalSide(p, quadrics[quadricIndex], d);
-                vec3 minReflectance = reflectance[quadricIndex];
-                if (dot(minReflectance, minReflectance) > 0.0) {
-                    vec4 reflectD = vec4(DReflect(d.xyz, N.xyz), 0.0);
-                    color *= IReflect(d.xyz, N.xyz, minReflectance);
-                    d = reflectD;
-                    e = p + epsilon*d;
-                } else {
-                    color *= objectColor * diffuseShading(p, N);
-                    break;
-                }
+            RRPoint left;
+            vec4 leftColor;
+            bool useRRPoint = goLeft(root, left, leftColor);
+            if (useRRPoint){
+                root = left;
             } else {
-                color *= texture(background, d.xyz).rgb;
-                break;
+                return leftColor;
             }
         }
         return vec4(color, 1);

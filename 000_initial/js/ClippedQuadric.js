@@ -5,11 +5,11 @@ const ClippedQuadric = function(A, B, reflectance, refractiveIndicies) {
   this.refractiveIndicies = refractiveIndicies;
 }
 
-ClippedQuadric.prototype.setUnitSphere = function(h, v){
+ClippedQuadric.prototype.setUnitSphere = function(h, v, d = 0, s = 1){
   this.A.set(	1, 0, 0, -(2*h),
 		0, 1, 0, -2*v,
-		0, 0, 1, 0,
-		0, 0, 0, -1+(h*h)+(v*v));
+		0, 0, 1, -2*d,
+		0, 0, 0, -s+(h*h)+(v*v)+(d*d));
   this.B.set(	0, 0, 0, 0,
 		0, 0, 0, 0,
 		0, 0, 0, 0,

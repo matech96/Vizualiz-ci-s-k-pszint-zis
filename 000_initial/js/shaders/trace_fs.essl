@@ -15,9 +15,10 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
     out vec4 fragmentColor;
 
     vec3 objectColor = vec3(0, 1, 0);
-    vec3 lightPoint = vec3(2, 2, 0);
-    float lightPower = 200.0;
+    vec3 lightPoint = vec3(0, 4, -2);
+    float lightPower = 10.0;
     float epsilon = 0.001;
+    int n_samples = 4;
 
     vec3 surfaceNormal(vec4 v, mat4 quadric) {
         float a = quadric[0][0];
@@ -249,46 +250,51 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         if (t < 0.0){
             return vec4(texture(background, d.xyz).rgb, 1);
         }
-        RRPoint root;
-        root.i = quadricIndex;
-        root.p = e + t*d;
-        root.d = d;
 
-        vec3 intensity = vec3(1,1,1);
-        for (int rrCount = 0; rrCount < 10; ++rrCount)
+        vec4 colorSum = vec4(0,0,0,0);
+        for (int sampleID = 0; sampleID < n_samples; ++sampleID)
         {
-            vec4 N = surfaceNormalSide(root.p, quadrics[root.i], root.d);
-            bool isReflective = dot(reflectance[root.i], reflectance[root.i]) > 0.0;
-            bool isRefractive = refractiveIndicies[root.i] > 0.0;
-            vec3 intensityReflect = IReflect(root.d.xyz, N.xyz, reflectance[root.i].xyz);
-            if (isReflective) {
-                RRPoint left;
-                vec4 leftColor;
-                bool useRRPoint = goLeft(root, left, leftColor);
-                intensity *= intensityReflect;
-                if (useRRPoint){
-                    root = left;
-                } else {
-                    return leftColor * vec4(intensity, 1);
+            RRPoint root;
+            root.i = quadricIndex;
+            root.p = e + t*d;
+            root.d = d;
+            vec3 intensity = vec3(1,1,1);
+            for (int rrCount = 0; rrCount < 10; ++rrCount)
+            {
+                vec4 N = surfaceNormalSide(root.p, quadrics[root.i], root.d);
+                bool isReflective = dot(reflectance[root.i], reflectance[root.i]) > 0.0;
+                bool isRefractive = refractiveIndicies[root.i] > 0.0;
+                vec3 intensityReflect = IReflect(root.d.xyz, N.xyz, reflectance[root.i].xyz);
+                if (sampleID % 2 == 0 && isReflective) {
+                    RRPoint left;
+                    vec4 leftColor;
+                    bool useRRPoint = goLeft(root, left, leftColor);
+                    intensity *= intensityReflect;
+                    if (useRRPoint){
+                        root = left;
+                    } else {
+                        colorSum += leftColor * vec4(intensity, 1);
+                        break;
+                    }
+                } 
+                if (sampleID % 2 == 1 && isRefractive) {
+                    RRPoint right;
+                    vec4 rightColor;
+                    bool useRRPoint = goRight(root, right, rightColor);
+                    intensity *= vec3(1,1,1) - intensityReflect;
+                    if (useRRPoint){
+                        root = right;
+                    } else {
+                        colorSum += rightColor * vec4(intensity, 1);
+                        break;
+                    }
                 }
-            } 
-            if (isRefractive) {
-                RRPoint right;
-                vec4 rightColor;
-                bool useRRPoint = goRight(root, right, rightColor);
-                intensity *= vec3(1,1,1) - intensityReflect;
-                if (useRRPoint){
-                    root = right;
-                } else {
-                    return rightColor * vec4(intensity, 1);
+                if (!isReflective && !isRefractive) {
+                    colorSum += vec4(objectColor * diffuseShading(root.p, N),1);
                 }
             }
-            if (!isReflective && !isRefractive) {
-                return vec4(objectColor * diffuseShading(root.p, N),1);
-            }
-            // IReflect(vec3 inDir, vec3 normal, vec3 minReflectance)
         }
-        return vec4(intensity, 1);
+        return vec4((colorSum / float(n_samples)).xyz, 1);
     }
 
   void main() {

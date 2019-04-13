@@ -4,9 +4,9 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
     uniform vec4 eyePosition;
     uniform mat4 quadrics[16];
     uniform mat4 clippers[16];
-    uniform vec4 brdfs[16]; 
     uniform vec3 reflectance[16];
     uniform float refractiveIndicies[16];
+    uniform vec4 phongs[16];
 
     uniform samplerCube background;
 
@@ -54,39 +54,6 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
             return N4; 
         }
     }
-
-    vec3 shade(
-        vec3 kd,
-        vec3 normal,
-        vec3 viewDir,
-        vec3 lightDir,
-        vec3 lightPowerDensity) {
-        float cosTheta = dot(normal, lightDir);
-        if(cosTheta < 0.0) {
-            return vec3(0.0,0.0,0.0);
-        } else {
-            return kd * lightPowerDensity * cosTheta;
-        }
-    }
-
-    // vec3 shade( vec4 ksg,
-    //     vec3 normal, vec3 viewDir,
-    //     vec3 lightDir, vec3 lightPowerDensity){
-    //     float cosTheta = dot(normal, lightDir);
-    //     if(cosTheta < 0) {
-    //         return vec3(0.0,0.0,0.0);
-    //     }
-    //     vec3 halfway = normalize(viewDir + lightDir);
-    //     float cosDelta = dot(normal,  halfway);
-    //     if(cosDelta < 0) {
-    //         return vec3(0.0,0.0,0.0);
-    //     } else{
-    //         return lightPowerDensity * ksg.xyz * pow(cosDelta, ksg.w);
-    //     }
-    // }
-
-
-
   
     float intersectClippedQuadric(mat4 A, vec4 e, vec4 d, mat4 B){
         float a = dot(d * A, d);
@@ -141,7 +108,24 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         return vec3(1.0, 1.0, 1.0) - IReflect(inDir, normal, minReflectance); 
     }
 
-    float diffuseShading(vec4 p, vec4 N){
+    vec3 diffuseShading(vec4 p, vec4 N, vec4 lightDirNorm, float lightDist, float intensity){
+        return objectColor * intensity * dot(N, lightDirNorm) * lightPower / (4.0*3.14*lightDist);
+    }
+
+    vec3 PhongShading(vec4 phong, vec3 N, vec3 d, vec3 lightDir, float lightPowerDensity) {
+        vec3 ks = phong.xyz;
+        float shininess = phong[3];
+        float cosTheta = dot(N, lightDir);
+        if(cosTheta < 0.0) {return vec3(0,0,0);}
+
+        vec3 halfway = normalize(d + lightDir);
+        float cosDelta = dot(N, halfway);
+        if(cosDelta < 0.0) {return vec3(0,0,0);}
+
+        return lightPowerDensity * ks * pow(cosDelta, shininess);
+    }
+
+    vec3 shade(vec4 p, vec4 d, vec4 N, vec4 phong){
         vec4 lightDir = vec4(lightPoint, 0.0) - p;
         float lightDist = dot(lightDir, lightDir);
         vec4 lightDirNorm = vec4(normalize(lightDir.xyz), 0.0);
@@ -149,9 +133,11 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         float lightT = findBestHit(p + epsilon*N, lightDirNorm, lightQuadraticIndex);
         float intensity = 0.0;
         if (lightT < 0.0 || lightDist < (lightT * lightT)) {
-            intensity = dot(N, lightDirNorm) * lightPower / (4.0*3.14*lightDist);
+            intensity = lightPower / (4.0*3.14*lightDist);
         }
-        return intensity;
+        vec3 phongShade =  PhongShading(phong, N.xyz, -d.xyz, lightDirNorm.xyz, intensity);
+        vec3 diffuseShade = diffuseShading(p, N, lightDirNorm, lightDist, intensity);
+        return phongShade + diffuseShade;
     }
 
     struct RRPoint
@@ -160,39 +146,6 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         vec4 p;
         vec4 d;
     };
-
-    struct RRPointStack
-    {
-        int i;
-        RRPoint data[16];
-    };
-
-    struct ColorStack
-    {
-        int i;
-        vec4 data[16];
-    };
-
-    void RRPointStackPop(RRPointStack s){
-        s.i--;
-    }
-
-    void RRPointStackPush(RRPointStack rs, ColorStack cs, RRPoint e){
-        rs.data[rs.i++] = e;
-        cs.data[cs.i++] = vec4(-1);
-    }
-
-    ColorStack ColorStackCreate(out ColorStack colorStack){
-        for (int i = 0; i < 16; ++i)
-        {
-            colorStack.data[i] = vec4(-1);
-        }
-        return colorStack;
-    }
-
-    void ColorStackPop(ColorStack s){
-        s.i--;
-    }
 
     bool goLeft(RRPoint root, out RRPoint rrpoint, out vec4 color){
         vec4 N = surfaceNormalSide(root.p, quadrics[root.i], root.d);
@@ -263,7 +216,8 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
             bool isReflective = dot(reflectance[root.i], reflectance[root.i]) > 0.0;
             bool isRefractive = refractiveIndicies[root.i] > 0.0;
             if (!isReflective && !isRefractive) {
-                return vec4(objectColor * diffuseShading(root.p, N),1);
+                return vec4(shade(root.p, root.d, N, phongs[root.i]), 1);
+                // return vec4(objectColor * diffuseShading(root.p, N),1);
             }
 
             vec3 intensity = vec3(1,1,1);
@@ -298,7 +252,8 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
                     }
                 }
                 if (!isReflective && !isRefractive) {
-                    colorSum += vec4(objectColor * diffuseShading(root.p, N),1);
+                    colorSum += vec4(shade(root.p, root.d, N, phongs[root.i]), 1);
+                    // colorSum += vec4(objectColor * diffuseShading(root.p, N),1);
                     break;
                 }
                 // normalizer--;

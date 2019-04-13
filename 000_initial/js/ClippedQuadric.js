@@ -1,8 +1,9 @@
-const ClippedQuadric = function(A, B, reflectance, refractiveIndicies) {
+const ClippedQuadric = function(A, B, reflectance, refractiveIndicies, phongs) {
   this.A = A;
   this.B = B;
   this.reflectance = reflectance;
   this.refractiveIndicies = refractiveIndicies;
+  this.phongs = phongs;
 }
 
 ClippedQuadric.prototype.setUnitSphere = function(h, v, d = 0, s = 1){

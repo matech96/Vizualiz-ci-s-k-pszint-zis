@@ -197,50 +197,50 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         vec4 N = surfaceNormalSide(root.p, quadrics[root.i], root.d);
 
         vec3 minReflectance = reflectance[root.i];
-        if (dot(minReflectance, minReflectance) > 0.0) {
-            vec4 reflectD = vec4(DReflect(root.d.xyz, N.xyz), 0.0);
-            vec4 e = root.p + epsilon*reflectD;
-            int quadricIndex;
-            float t = findBestHit(e, reflectD, quadricIndex);
-            bool isColor = (t <= 0.0);
-            if (isColor) {
-                color = vec4(texture(background, reflectD.xyz).rgb, 1);
-                return false;
-            }
-
-            rrpoint.i = quadricIndex;
-            rrpoint.p = e + t*reflectD;
-            rrpoint.d = reflectD;
-            return true;
-        } else {
-            color = vec4(objectColor * diffuseShading(root.p, N),1);
+        // if (dot(minReflectance, minReflectance) == 0.0) {
+        //     color = vec4(objectColor * diffuseShading(root.p, N),1);
+        //     return false;
+        // }
+        
+        vec4 reflectD = vec4(DReflect(root.d.xyz, N.xyz), 0.0);
+        vec4 e = root.p + epsilon*reflectD;
+        int quadricIndex;
+        float t = findBestHit(e, reflectD, quadricIndex);
+        bool isColor = (t <= 0.0);
+        if (isColor) {
+            color = vec4(texture(background, reflectD.xyz).rgb, 1);
             return false;
         }
+
+        rrpoint.i = quadricIndex;
+        rrpoint.p = e + t*reflectD;
+        rrpoint.d = reflectD;
+        return true;
     }
 
     bool goRight(RRPoint root, out RRPoint rrpoint, out vec4 color){
         vec4 N = surfaceNormalSide(root.p, quadrics[root.i], root.d);
 
         float refractiveIndex= refractiveIndicies[root.i];
-        if (refractiveIndex > 0.0) {
-            vec4 refractD = vec4(DRefract(root.d.xyz, N.xyz, refractiveIndex), 0.0);
-            vec4 e = root.p + epsilon*refractD;
-            int quadricIndex;
-            float t = findBestHit(e, refractD, quadricIndex);
-            bool isColor = (t <= 0.0);
-            if (isColor) {
-                color = vec4(texture(background, refractD.xyz).rgb, 1);
-                return false;
-            }
+        // if (refractiveIndex < 0.0) {
+        //     color = vec4(objectColor * diffuseShading(root.p, N),1);
+        //     return false;
+        // }
 
-            rrpoint.i = quadricIndex;
-            rrpoint.p = e + t*refractD;
-            rrpoint.d = refractD;
-            return true;
-        } else {
-            color = vec4(objectColor * diffuseShading(root.p, N),1);
+        vec4 refractD = vec4(DRefract(root.d.xyz, N.xyz, refractiveIndex), 0.0);
+        vec4 e = root.p + epsilon*refractD;
+        int quadricIndex;
+        float t = findBestHit(e, refractD, quadricIndex);
+        bool isColor = (t <= 0.0);
+        if (isColor) {
+            color = vec4(texture(background, refractD.xyz).rgb, 1);
             return false;
         }
+
+        rrpoint.i = quadricIndex;
+        rrpoint.p = e + t*refractD;
+        rrpoint.d = refractD;
+        return true;
     }
 
     vec4 relfectRefract(vec4 e, vec4 d){
@@ -254,37 +254,33 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         root.p = e + t*d;
         root.d = d;
 
-        vec3 color = vec3(1,1,1);
+        vec3 intensity = vec3(1,1,1);
         for (int i = 0; i < 10; ++i)
         {
-            // RRPoint right;
-            // vec4 rightColor;
-            // bool useRRPoint = goRight(root, right, rightColor);
-            // if (useRRPoint){
-            //     root = right;
-            // } else {
-            //     return rightColor;
-            // }
-
-            RRPoint left;
-            vec4 leftColor;
-            bool useRRPoint = goLeft(root, left, leftColor);
-            if (useRRPoint){
-                root = left;
+            vec4 N = surfaceNormalSide(root.p, quadrics[root.i], root.d);
+            if (dot(reflectance[root.i], reflectance[root.i]) > 0.0) {
+                RRPoint left;
+                vec4 leftColor;
+                bool useRRPoint = goLeft(root, left, leftColor);
+                if (useRRPoint){
+                    root = left;
+                } else {
+                    return leftColor;
+                }
             } else if (refractiveIndicies[root.i] > 0.0) {
                 RRPoint right;
                 vec4 rightColor;
-                useRRPoint = goRight(root, right, rightColor);
+                bool useRRPoint = goRight(root, right, rightColor);
                 if (useRRPoint){
                     root = right;
                 } else {
                     return rightColor;
                 }
             } else {
-                return leftColor;
+                return vec4(objectColor * diffuseShading(root.p, N),1);
             }
         }
-        return vec4(color, 1);
+        return vec4(intensity, 1);
     }
 
   void main() {

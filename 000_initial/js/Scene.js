@@ -54,21 +54,23 @@ Scene.prototype.update = function(gl, keysPressed) {
 
 
 
-  const ballBehind = new ClippedQuadric(
+  const ballButtom = new ClippedQuadric(
     this.traceProgram.quadrics.at(0),
     this.traceProgram.clippers.at(0),
     this.traceProgram.reflectance.at(0),
     this.traceProgram.refractiveIndicies.at(0));
 
-  ballBehind.setUnitSphere(0, -2.1);
+  ballButtom.setUnitSphere(0, -2.1);
+  ballButtom.reflectance.set(1,1,1);
+  ballButtom.refractiveIndicies.set(1.2);
 
-  const ballFront = new ClippedQuadric(
+  const ballTop = new ClippedQuadric(
     this.traceProgram.quadrics.at(1),
     this.traceProgram.clippers.at(1),
     this.traceProgram.reflectance.at(1),
     this.traceProgram.refractiveIndicies.at(1));
 
-  ballFront.setUnitSphere(0, 2.1);
+  ballTop.setUnitSphere(0, 2.1);
 
   const ballRight = new ClippedQuadric(
     this.traceProgram.quadrics.at(2),

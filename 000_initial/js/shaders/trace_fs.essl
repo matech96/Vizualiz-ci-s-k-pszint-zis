@@ -18,6 +18,7 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
     vec3 lightPoint = vec3(2, 2, 0);
     float lightPower = 200.0;
     float epsilon = 0.001;
+    int n_Refl = 2;
 
     vec3 surfaceNormal(vec4 v, mat4 quadric) {
         float a = quadric[0][0];
@@ -140,19 +141,6 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         return vec3(1.0, 1.0, 1.0) - IReflect(inDir, normal, minReflectance); 
     }
 
-    float diffuseShading(vec4 p, vec4 N){
-        vec4 lightDir = vec4(lightPoint, 0.0) - p;
-        float lightDist = dot(lightDir, lightDir);
-        vec4 lightDirNorm = vec4(normalize(lightDir.xyz), 0.0);
-        int lightQuadraticIndex;
-        float lightT = findBestHit(p + epsilon*N, lightDirNorm, lightQuadraticIndex);
-        float intensity = 0.0;
-        if (lightT < 0.0 || lightDist < (lightT * lightT)) {
-            intensity = dot(N, lightDirNorm) * lightPower / (4.0*3.14*lightDist);
-        }
-        return intensity;
-    }
-
     struct RRPoint
     {
         int i;
@@ -176,12 +164,14 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         s.i--;
     }
 
-    void RRPointStackPush(RRPointStack rs, ColorStack cs, RRPoint e){
-        rs.data[rs.i++] = e;
-        cs.data[cs.i++] = vec4(-1);
+    void RRPointStackPush(out RRPointStack S, out ColorStack L, out ColorStack R, RRPoint e){
+        S.data[S.i++] = e;
+        L.data[L.i++] = vec4(-1);
+        R.data[R.i++] = vec4(-1);
     }
 
-    ColorStack ColorStackCreate(out ColorStack colorStack){
+    ColorStack ColorStackCreate(){
+        ColorStack colorStack;
         for (int i = 0; i < 16; ++i)
         {
             colorStack.data[i] = vec4(-1);
@@ -192,6 +182,24 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
     void ColorStackPop(ColorStack s){
         s.i--;
     }
+    void PopStack(out RRPointStack S, out ColorStack L, out ColorStack R){
+        S.i--;
+        L.i--;
+        R.i--;
+    }
+
+    float diffuseShading(vec4 p, vec4 N){
+        vec4 lightDir = vec4(lightPoint, 0.0) - p;
+        float lightDist = dot(lightDir, lightDir);
+        vec4 lightDirNorm = vec4(normalize(lightDir.xyz), 0.0);
+        int lightQuadraticIndex;
+        float lightT = findBestHit(p + epsilon*N, lightDirNorm, lightQuadraticIndex);
+        float intensity = 0.0;
+        if (lightT < 0.0 || lightDist < (lightT * lightT)) {
+            intensity = dot(N, lightDirNorm) * lightPower / (4.0*3.14*lightDist);
+        }
+        return intensity;
+    }
 
     bool goLeft(RRPoint root, out RRPoint rrpoint, out vec4 color){
         vec4 N = surfaceNormalSide(root.p, quadrics[root.i], root.d);
@@ -201,7 +209,7 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         //     color = vec4(objectColor * diffuseShading(root.p, N),1);
         //     return false;
         // }
-        
+
         vec4 reflectD = vec4(DReflect(root.d.xyz, N.xyz), 0.0);
         vec4 e = root.p + epsilon*reflectD;
         int quadricIndex;
@@ -242,6 +250,41 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         rrpoint.d = refractD;
         return true;
     }
+    struct step3and4Out
+    {
+        RRPointStack S;
+        ColorStack L;
+        ColorStack R;
+        RRPoint current;
+    };
+
+    step3and4Out step3and4(RRPointStack S, ColorStack L, ColorStack R, RRPoint current){
+        for (int i = 0; i < n_Refl; ++i)
+        {
+            // RRPointStackPush(S, L, R, current);
+            if (dot(reflectance[current.i], reflectance[current.i]) > 0.0) {
+                RRPoint left;
+                vec4 leftColor;
+                bool useRRPoint = goLeft(current, left, leftColor);
+                if (useRRPoint){
+                    current = left;
+                } else {
+                    L.data[S.i-1] = leftColor;
+                    break;
+                }
+            } else {
+                vec4 N = surfaceNormalSide(current.p, quadrics[current.i], current.d);
+                L.data[S.i-1] = vec4(objectColor * diffuseShading(current.p, N),1);
+                break;
+            }
+        }
+        step3and4Out r;
+        r.S = S;
+        r.L = L;
+        r.R = R;
+        r.current = current;
+        return r;
+    }
 
     vec4 relfectRefract(vec4 e, vec4 d){
         int quadricIndex;
@@ -254,33 +297,111 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         root.p = e + t*d;
         root.d = d;
 
-        vec3 intensity = vec3(1,1,1);
-        for (int i = 0; i < 10; ++i)
-        {
-            vec4 N = surfaceNormalSide(root.p, quadrics[root.i], root.d);
-            if (dot(reflectance[root.i], reflectance[root.i]) > 0.0) {
-                RRPoint left;
-                vec4 leftColor;
-                bool useRRPoint = goLeft(root, left, leftColor);
-                if (useRRPoint){
-                    root = left;
-                } else {
-                    return leftColor;
-                }
-            } else if (refractiveIndicies[root.i] > 0.0) {
-                RRPoint right;
-                vec4 rightColor;
-                bool useRRPoint = goRight(root, right, rightColor);
-                if (useRRPoint){
-                    root = right;
-                } else {
-                    return rightColor;
-                }
-            } else {
-                return vec4(objectColor * diffuseShading(root.p, N),1);
-            }
+        RRPointStack S;
+        ColorStack L = ColorStackCreate();
+        ColorStack R = ColorStackCreate();
+        RRPoint current = root;
+        
+        for (int i = 0; i < n_Refl; ++i) {
+            RRPointStack S_t = S;
+            ColorStack L_t = L;
+            ColorStack R_t = R;
+            RRPoint current_t = current;
+            step3and4Out r = step3and4(S_t, L_t, R_t, current_t);
+            S = r.S;
+            L = r.L;
+            R = r.R;
+            current = r.current;
+
+        //     if(S.i == 0) break;
+
+        //     current = S.data[S.i-1];
+        //     if (refractiveIndicies[current.i] > 0.0) {
+        //         RRPoint right;
+        //         vec4 rightColor;
+        //         bool useRRPoint = goRight(root, right, rightColor);
+        //         if (useRRPoint){
+        //             current = right;
+        //         } else {
+
+        //             R.data[S.i-1] = rightColor;
+        //             for (int i = 0; i < n_Refl; ++i)
+        //             {
+        //                 vec4 N = surfaceNormalSide(current.p, quadrics[current.i], current.d);
+        //                 vec4 intensity = vec4(IReflect(current.d.xyz, N.xyz, reflectance[current.i].xyz), 1);
+        //                 vec4 rr = (intensity * L.data[S.i-1]) + ((vec4(1, 1, 1, 0) - intensity) * R.data[S.i-1]);
+        //                 if (S.i == 0){
+        //                     return rr;
+        //                 }
+        //                 PopStack(S, L, R);
+        //                 if (L.data[S.i-1][0] < 0.0)
+        //                 {
+        //                     L.data[S.i-1] = rr;
+        //                 } else {
+        //                     R.data[S.i-1] = rr;
+        //                     break;
+        //                 }
+        //             }
+        //             current = S.data[S.i-1];
+        //             if (refractiveIndicies[current.i] > 0.0) {
+        //                 RRPoint right;
+        //                 vec4 rightColor;
+        //                 bool useRRPoint = goRight(current, right, rightColor);
+        //                 if (useRRPoint){
+        //                     current = right;
+        //                     // GOTO STEP 3
+        //                 } else {
+        //                     L.data[S.i-1] = rightColor;
+        //                     // GOTO STEP 5
+        //                 }
+        //             }
+        //         }
+        //     }
         }
-        return vec4(intensity, 1);
+
+        return vec4(0);
+
+
+
+        // ######
+
+        // int quadricIndex;
+        // float t = findBestHit(e, d, quadricIndex);
+        // if (t < 0.0){
+        //     return vec4(texture(background, d.xyz).rgb, 1);
+        // }
+        // RRPoint root;
+        // root.i = quadricIndex;
+        // root.p = e + t*d;
+        // root.d = d;
+
+        // vec3 intensity = vec3(1,1,1);
+        // for (int i = 0; i < 10; ++i)
+        // {
+        //     vec4 N = surfaceNormalSide(root.p, quadrics[root.i], root.d);
+        //     if (dot(reflectance[root.i], reflectance[root.i]) > 0.0) {
+        //         RRPoint left;
+        //         vec4 leftColor;
+        //         bool useRRPoint = goLeft(root, left, leftColor);
+        //         if (useRRPoint){
+        //             root = left;
+        //         } else {
+        //             return leftColor;
+        //         }
+        //     } else if (refractiveIndicies[root.i] > 0.0) {
+        //         RRPoint right;
+        //         vec4 rightColor;
+        //         bool useRRPoint = goRight(root, right, rightColor);
+        //         if (useRRPoint){
+        //             root = right;
+        //         } else {
+        //             return rightColor;
+        //         }
+        //     } else {
+        //         return vec4(objectColor * diffuseShading(root.p, N),1);
+        //     }
+        // }
+        // return vec4(intensity, 1);
     }
 
   void main() {

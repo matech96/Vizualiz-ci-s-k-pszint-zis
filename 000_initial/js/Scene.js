@@ -40,53 +40,62 @@ Scene.prototype.update = function(gl, keysPressed) {
   
   this.traceProgram.rayDirMatrix.set(this.camera.rayDirMatrix);
   this.traceProgram.eyePosition.set(this.camera.position);
-  // const orange = new ClippedQuadric(
-  //   this.traceProgram.quadrics.at(0),
-  //   this.traceProgram.clippers.at(0));
-
-  // orange.setCylinder(10, 10);
-
-  // const big = new ClippedQuadric(
-  //   this.traceProgram.quadrics.at(1),
-  //   this.traceProgram.clippers.at(1));
-
-  // big.setCylinder(5, 100);
-
-
-
-  const ballButtom = new ClippedQuadric(
+  const orange = new ClippedQuadric(
     this.traceProgram.quadrics.at(0),
     this.traceProgram.clippers.at(0),
     this.traceProgram.reflectance.at(0),
     this.traceProgram.refractiveIndicies.at(0));
 
-  ballButtom.setUnitSphere(0, 0);
-  ballButtom.reflectance.set(2,2,2);
-  ballButtom.refractiveIndicies.set(1.2);
+  orange.setCylinder(10, 10);
 
-  const ballBehind = new ClippedQuadric(
+  const big = new ClippedQuadric(
     this.traceProgram.quadrics.at(1),
     this.traceProgram.clippers.at(1),
     this.traceProgram.reflectance.at(1),
     this.traceProgram.refractiveIndicies.at(1));
 
-  ballBehind.setUnitSphere(0, 0, -2.1);
+  big.setCylinder(5, 100);
 
-  const ballTop = new ClippedQuadric(
-    this.traceProgram.quadrics.at(3),
-    this.traceProgram.clippers.at(3),
-    this.traceProgram.reflectance.at(3),
-    this.traceProgram.refractiveIndicies.at(3));
 
-  ballTop.setUnitSphere(0, 3, -2.1, 0.5);
 
-  const wall = new ClippedQuadric(
+  const ballMixed = new ClippedQuadric(
     this.traceProgram.quadrics.at(2),
     this.traceProgram.clippers.at(2),
     this.traceProgram.reflectance.at(2),
     this.traceProgram.refractiveIndicies.at(2));
 
-  wall.setWalls();
+  ballMixed.setUnitSphere(2.1, 0, 5);
+  ballMixed.reflectance.set(2,2,2);
+  ballMixed.refractiveIndicies.set(1.2);
+
+  const ballReflec = new ClippedQuadric(
+    this.traceProgram.quadrics.at(3),
+    this.traceProgram.clippers.at(3),
+    this.traceProgram.reflectance.at(3),
+    this.traceProgram.refractiveIndicies.at(3));
+
+  ballReflec.setUnitSphere(0, 0, 5);
+  ballReflec.reflectance.set(2,2,2);
+
+  const ballRefrac = new ClippedQuadric(
+    this.traceProgram.quadrics.at(4),
+    this.traceProgram.clippers.at(4),
+    this.traceProgram.reflectance.at(4),
+    this.traceProgram.refractiveIndicies.at(4));
+
+  ballRefrac.setUnitSphere(-2.1, 0, 5);
+  ballRefrac.refractiveIndicies.set(1.2);
+
+  // const wall = new ClippedQuadric(
+  //   this.traceProgram.quadrics.at(2),
+  //   this.traceProgram.clippers.at(2),
+  //   this.traceProgram.reflectance.at(2),
+  //   this.traceProgram.refractiveIndicies.at(2));
+
+  // wall.setWalls();
+
+
+
 
   // const ballTop = new ClippedQuadric(
   //   this.traceProgram.quadrics.at(1),

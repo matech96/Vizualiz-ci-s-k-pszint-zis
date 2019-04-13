@@ -1,7 +1,8 @@
-const ClippedQuadric = function(A, B, reflectance) {
+const ClippedQuadric = function(A, B, reflectance, refractiveIndicies) {
   this.A = A;
   this.B = B;
   this.reflectance = reflectance;
+  this.refractiveIndicies = refractiveIndicies;
 }
 
 ClippedQuadric.prototype.setUnitSphere = function(h, v){
@@ -14,6 +15,7 @@ ClippedQuadric.prototype.setUnitSphere = function(h, v){
 		0, 0, 0, 0,
 		0, 0, 0, 0);
   this.reflectance.set(0, 0, 0);
+  this.refractiveIndicies.set(-1);
 }
 
 ClippedQuadric.prototype.setCylinder = function(diaginal, height){

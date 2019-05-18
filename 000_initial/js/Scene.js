@@ -34,17 +34,6 @@ Scene.prototype.update = function(gl, keysPressed) {
   
   this.traceProgram.rayDirMatrix.set(this.camera.rayDirMatrix);
   this.traceProgram.eyePosition.set(this.camera.position);
-  const orange = new ClippedQuadric(
-    this.traceProgram.quadrics.at(0),
-    this.traceProgram.clippers.at(0));
-
-  orange.setCylinder(10, 10);
-
-  const big = new ClippedQuadric(
-    this.traceProgram.quadrics.at(1),
-    this.traceProgram.clippers.at(1));
-
-  big.setCylinder(5, 100);
 
   this.traceProgram.volume.set(this.volume);
   

@@ -12,6 +12,7 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
     vec3 objectColor = vec3(0.5, 0.5, 0.5);
     vec3 lightDir = vec3(0, 1, 0);
     float density = 0.2;
+    int nLoops = 32;
 
     float noise(vec3 r) {
         return texture(volume, r).r;
@@ -23,9 +24,9 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         float tstart = max(min(t1, t2), 0.0);
         float tend = max(max(t1, t2), 0.0);
         p = (e + d * tstart).xyz;
-        vec3 step = d.xyz * min((tend - tstart)/128.0, 0.05);
+        vec3 step = d.xyz * min((tend - tstart)/float(nLoops), 0.05);
         float h;
-        for(int i=0; i<128; i++){
+        for(int i=0; i<nLoops; i++){
             h = noise(p);
             if(h > density) break;
             p += step;
@@ -64,9 +65,15 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
                 noise(p + vec3(0.0, 0.0, -0.05) ) 
                 );
             vec3 N = normalize(gradient);
-            float intensity = dot(N, -1.0 * lightDir);
-            fragmentColor = vec4(objectColor * intensity, 1);
-            fragmentColor += vec4(PhongShading(vec4(1,1,1,10), N, d.xyz, -1.0*lightDir, 1.0), 1);
+            vec3 tmp;
+            float h = moveToSurface(vec4(p + N, 1), vec4(N, 1), tmp);
+            if (h > density){
+                float intensity = dot(N, -1.0 * lightDir);
+                fragmentColor = vec4(objectColor * intensity, 1);
+                fragmentColor += vec4(PhongShading(vec4(1,1,1,10), N, d.xyz, -1.0*lightDir, 1.0), 1);
+            } else {
+                fragmentColor = vec4(0, 0, 0, 1);
+            }
         } else {
             fragmentColor = vec4(1, 1, 1, 1);
         }

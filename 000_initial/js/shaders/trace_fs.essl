@@ -18,7 +18,7 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
     float epsilon = 1e-6;
 
     float noise(vec3 r) {
-        float value = 1.0;
+        float value = 0.999;
         if(abs(r[0]) < value && abs(r[1]) < value && abs(r[2]) < value){
             return texture(volume, r).r;
         } else {

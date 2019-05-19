@@ -25,20 +25,37 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         }
     }
 
-    float getT(vec4 e, vec4 d, int axis){
-        float tl = (e[axis] + 1.0) / d[axis];
-        float tr = (e[axis] - 1.0) / d[axis];
+    float getTStart(vec4 e, vec4 d, int axis){
+        float tl = (-1.0 - e[axis]) / d[axis];
+        float tr = (1.0 - e[axis]) / d[axis];
         return min(tl, tr);        
     }
 
+    float getTEnd(vec4 e, vec4 d, int axis){
+        float tl = (-1.0 - e[axis]) / d[axis];
+        float tr = (1.0 - e[axis]) / d[axis];
+        return max(tl, tr);        
+    }
+
+    float getTStartTotal(vec4 e, vec4 d){
+        float tx = getTStart(e, d, 0);
+        float ty = getTStart(e, d, 1);
+        float tz = getTStart(e, d, 2);
+        return max(max(tx, ty), tz);        
+    }
+
+    float getTEndTotal(vec4 e, vec4 d){
+        float tx = getTEnd(e, d, 0);
+        float ty = getTEnd(e, d, 1);
+        float tz = getTEnd(e, d, 2);
+        return min(min(tx, ty), tz);        
+    }
+
     float moveToSurface(vec4 e, vec4 d, out vec3 p){
-        float tx = getT(e, d, 0);
-        float ty = getT(e, d, 1);
-        float tz = getT(e, d, 2);
-        float tstart = max(max(tx, ty), tz);
-        p = e.xyz;
-        // p = (e + tstart*d).xyz;
-        vec3 step = d.xyz * 0.05;
+        float tstart = getTStartTotal(e, d);
+        float tend = getTEndTotal(e, d);
+        p = (e + (tstart*d)).xyz;
+        vec3 step = d.xyz * min((tend - tstart)/float(nLoops), 0.05);
         p += step;
         float h;
         for(int i=0; i<nLoops; i++){
@@ -47,6 +64,19 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
             p += step;
         }
         return h;
+    }
+
+    bool checkLightVisible(vec4 e, vec4 d){
+        vec3 p = e.xyz;
+        vec3 step = d.xyz * 0.05;
+        p += step;
+        float h;
+        for(int i=0; i<nLoops; i++){
+            h = noise(p);
+            if(h > density) break;
+            p += step;
+        }
+        return h <= density;        
     }
 
     vec3 PhongShading(vec4 phong, vec3 N, vec3 d, vec3 lightDir, float lightPowerDensity) {
@@ -69,7 +99,7 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
 
         vec3 p;
         float h = moveToSurface(e, d, p);
-
+        // fragmentColor = vec4(objectColor * h, 1);
         if(h > density) {
             vec3 gradient = vec3(
                 noise(p + vec3(+0.05, 0.0, 0.0) ) -
@@ -80,9 +110,8 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
                 noise(p + vec3(0.0, 0.0, -0.05) ) 
                 );
             vec3 N = normalize(gradient);
-            vec3 tmp;
-            float lightH = moveToSurface(vec4(p - (epsilon*lightDir), 0), vec4(lightDir, 0), tmp);
-            if (lightH < density){
+            bool lightVisible = checkLightVisible(vec4(p - (epsilon*lightDir), 0), vec4(lightDir, 0));
+            if (lightVisible){
                 float intensity = dot(N, -1.0 * lightDir);
                 fragmentColor = vec4(objectColor * intensity, 1);
                 fragmentColor += vec4(PhongShading(vec4(1,1,1,10), N, d.xyz, -1.0*lightDir, 1.0), 1);
@@ -91,7 +120,7 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
                 // fragmentColor = vec4(1, 0, 0, 1);
                 fragmentColor = vec4(0, 0, 0, 1);
             }
-            fragmentColor = vec4(objectColor * h, 1); // Uncomment to turn off shadows and shading
+            // fragmentColor = vec4(objectColor * h, 1); // Uncomment to turn off shadows and shading
         } else {
             fragmentColor = vec4(1, 1, 1, 1);
         }

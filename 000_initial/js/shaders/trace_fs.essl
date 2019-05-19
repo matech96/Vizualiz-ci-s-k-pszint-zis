@@ -52,36 +52,66 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         return min(min(tx, ty), tz);        
     }
 
-    float moveToSurface(vec4 e, vec4 d, out vec3 p){
+    vec4 moveToSurface(vec4 e, vec4 d, out vec3 p){
         float tstart = max(getTStartTotal(e, d), 0.0);
         float tend = getTEndTotal(e, d);
-        if(tend < 0.0) return -1.0;
+        if(tend < 0.0) return vec4(0,0,0,1);
 
         p = (e + (tstart*d)).xyz;
         vec3 step =  d.xyz * min((tend - tstart)/float(nLoops), 0.05);
         p += step;
         float h = 0.0;
         float h_res = 0.0;
-        // float h_akk = 0.0;
-        // float c_akk = 0;
+        float h_akk = 0.0;
+        vec4 c_akk = vec4(0,0,0,1);
+        int level;
+        int prev_level;
+        bool tmp = false;
         for(int i=0; i<nLoops; i++){
             h = noise(p);
-            if(h > h_res){
-                h_res = h;
-                // h_akk += (1.0-h_akk) * h;
+            // if(h > h_res){
+            //     h_res = h;
+            // }
+            if (h > density2)
+            {
+                level = 2;
+                return vec4(1, 0, 0, 1);
+            } else if(h > density) {
+                level = 1;
+                tmp = true;
+                // return vec4(0, 1, 0, 1);
+                // c_akk = vec4(0, 1, 0, 1) * 0.5;
+            } else 
+
+            if (level != prev_level)
+            {
+                if(level == 1) {
+                    h_akk += (1.0-h_akk) * 0.5;
+                    c_akk += (1.0-h_akk) * 0.5 * vec4(0, 0, 1, 1);
+                } else if (level == 2)
+                {
+                    h_akk += (1.0-h_akk) * 0.5;
+                    c_akk += (1.0-h_akk) * 0.5 * vec4(1, 0, 0, 1);
+                    return vec4(1, 0, 0, 1);
+                    // return c_akk;// vec4(1, 0, 0, 1);
+                }                
             }
-            // c_akk += (1.0-h_akk) * h;
-            // if(h > density) break;
             p += step;
+            prev_level = level;
         }
-        if (h_res < density) {
-            return -1.0;
-        } else if(h_res < density2) {
-            return density;
-        } else {
-            return density2;
+        if (tmp)
+        {
+            return vec4(0, 1, 0, 1);
         }
-        // return h_res;
+        // if (h_res < density) {
+        //     return -1.0;
+        // } else if(h_res < density2) {
+        //     return density;
+        // } else {
+        //     return density2;
+        // }
+        c_akk[3] = 1.0;
+        return c_akk;
     }
 
     bool checkLightVisible(vec4 e, vec4 d){
@@ -113,11 +143,12 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
     void main() {
         vec4 d = vec4(normalize(rayDir.xyz), 0.0);
         vec4 e = eyePosition;
-        fragmentColor = vec4(1, 1, 1, 1);
+        // fragmentColor = vec4(1, 1, 1, 1);
 
         vec3 p;
-        float h = moveToSurface(e, d, p);
-        fragmentColor = vec4(objectColor * h, 1);
+        // float h = moveToSurface(e, d, p);
+        // fragmentColor = vec4(objectColor * h, 1);
+        fragmentColor = moveToSurface(e, d, p);
         // if(h > density) {
         //     vec3 gradient = vec3(
         //         noise(p + vec3(+0.05, 0.0, 0.0) ) -

@@ -9,7 +9,7 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
 
     out vec4 fragmentColor;
 
-    vec3 objectColor = vec3(1,1,1); //vec3(0.5, 0.5, 0.5);
+    vec3 objectColor = vec3(1,1,1);
     vec3 lightDir = normalize(vec3(1, 2, 0));
     float density = 0.1;
     float density2 = 0.7;
@@ -66,20 +66,13 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         bool tmp = false;
         for(int i=0; i<nLoops; i++){
             float h = noise(p);
-            // if(h > h_res){
-            //     h_res = h;
-            // }
 
             int level = 0;
             if (h > density2)
             {
                 level = 2;
-                // return vec4(1, 0, 0, 1);
             } else if(h > density) {
                 level = 1;
-                // tmp = true;
-                // return vec4(0, 1, 0, 1);
-                // c_akk = vec4(0, 1, 0, 1) * 0.5;
             } 
 
             if (level != prev_level)
@@ -94,7 +87,6 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
                     );
                 vec3 N = normalize(gradient);
                 float opacity =  dot(N, -d.xyz);
-                // return vec4(1, 0, 0, 1);
                 if(level == 1) {
                     h_akk += (1.0-h_akk) * opacity;
                     c_akk += (1.0-h_akk) * opacity * vec4(0, 0, 1, 1);
@@ -102,25 +94,12 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
                 {
                     h_akk += (1.0-h_akk) * opacity;
                     c_akk += (1.0-h_akk) * opacity * vec4(1, 0, 0, 1);
-                    // return vec4(1, 0, 0, 1);
-                    // return c_akk;// vec4(1, 0, 0, 1);
                 }                
             }
             p += step;
             prev_level = level;
         }
         c_akk += (1.0-h_akk) * vec4(1, 1, 1, 1);
-        // if (tmp)
-        // {
-        //     return vec4(0, 1, 0, 1);
-        // }
-        // if (h_res < density) {
-        //     return -1.0;
-        // } else if(h_res < density2) {
-        //     return density;
-        // } else {
-        //     return density2;
-        // }
         c_akk[3] = 1.0;
         return c_akk;
     }
@@ -154,36 +133,8 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
     void main() {
         vec4 d = vec4(normalize(rayDir.xyz), 0.0);
         vec4 e = eyePosition;
-        // fragmentColor = vec4(1, 1, 1, 1);
 
         vec3 p;
-        // float h = moveToSurface(e, d, p);
-        // fragmentColor = vec4(objectColor * h, 1);
         fragmentColor = moveToSurface(e, d, p);
-        // if(h > density) {
-        //     vec3 gradient = vec3(
-        //         noise(p + vec3(+0.05, 0.0, 0.0) ) -
-        //         noise(p + vec3(-0.05, 0.0, 0.0) ) ,
-        //         noise(p + vec3(0.0, +0.05, 0.0) ) -
-        //         noise(p + vec3(0.0, -0.05, 0.0) ) , 
-        //         noise(p + vec3(0.0, 0.0, +0.05) ) -
-        //         noise(p + vec3(0.0, 0.0, -0.05) ) 
-        //         );
-        //     vec3 N = normalize(gradient);
-        //     bool lightVisible = checkLightVisible(vec4(p - (epsilon*lightDir), 0), vec4(lightDir, 0));
-        //     if (lightVisible){
-        //         float intensity = dot(N, -1.0 * lightDir);
-        //         fragmentColor = vec4(objectColor * intensity, 1);
-        //         fragmentColor += vec4(PhongShading(vec4(1,1,1,10), N, d.xyz, -1.0*lightDir, 1.0), 1);
-        //         // fragmentColor = vec4(0, 1, 0, 1);
-        //     } else {
-        //         // fragmentColor = vec4(1, 0, 0, 1);
-        //         fragmentColor = vec4(0, 0, 0, 1);
-        //     }
-        //     // fragmentColor = vec4(objectColor * h, 1); // Uncomment to turn off shadows and shading
-        // } else {
-        //     fragmentColor = vec4(1, 1, 1, 1);
-        // }
-
     }
 `;

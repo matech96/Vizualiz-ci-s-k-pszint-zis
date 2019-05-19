@@ -12,7 +12,7 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
     vec3 objectColor = vec3(1,1,1); //vec3(0.5, 0.5, 0.5);
     vec3 lightDir = normalize(vec3(1, 2, 0));
     float density = 0.1;
-    float density2 = 0.5;
+    float density2 = 0.7;
     int nLoops = 128;
 
     float epsilon = 1e-6;
@@ -58,15 +58,15 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
         if(tend < 0.0) return -1.0;
 
         p = (e + (tstart*d)).xyz;
-        vec3 step =  d.xyz * 0.05; // min((tend - tstart)/float(nLoops), 0.05);
+        vec3 step =  d.xyz * min((tend - tstart)/float(nLoops), 0.05);
         p += step;
-        float h;
-        float h_res;
+        float h = 0.0;
+        float h_res = 0.0;
         // float h_akk = 0.0;
         // float c_akk = 0;
         for(int i=0; i<nLoops; i++){
             h = noise(p);
-            if(h > density && h > h_res){
+            if(h > h_res){
                 h_res = h;
                 // h_akk += (1.0-h_akk) * h;
             }
@@ -74,7 +74,14 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
             // if(h > density) break;
             p += step;
         }
-        return h_res;
+        if (h_res < density) {
+            return -1.0;
+        } else if(h_res < density2) {
+            return density;
+        } else {
+            return density2;
+        }
+        // return h_res;
     }
 
     bool checkLightVisible(vec4 e, vec4 d){

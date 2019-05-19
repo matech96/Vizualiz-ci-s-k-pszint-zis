@@ -52,8 +52,10 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
     }
 
     float moveToSurface(vec4 e, vec4 d, out vec3 p){
-        float tstart = getTStartTotal(e, d);
+        float tstart = max(getTStartTotal(e, d), 0.0);
         float tend = getTEndTotal(e, d);
+        if(tend < 0.0) return -1.0;
+
         p = (e + (tstart*d)).xyz;
         vec3 step = d.xyz * min((tend - tstart)/float(nLoops), 0.05);
         p += step;

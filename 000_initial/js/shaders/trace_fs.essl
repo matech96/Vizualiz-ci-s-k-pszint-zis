@@ -18,7 +18,7 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
     float epsilon = 1e-6;
 
     float noise(vec3 r) {
-        float value = 0.999;
+        float value = 0.99;
         if(abs(r[0]) < value && abs(r[1]) < value && abs(r[2]) < value){
             return texture(volume, r).r;
         } else {
@@ -55,19 +55,17 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
     vec4 moveToSurface(vec4 e, vec4 d, out vec3 p){
         float tstart = max(getTStartTotal(e, d), 0.0);
         float tend = getTEndTotal(e, d);
-        if(tend < 0.0) return vec4(0,0,0,1);
+        if(tend < 0.0) return vec4(1,1,1,1);
 
         p = (e + (tstart*d)).xyz;
         vec3 step =  d.xyz * min((tend - tstart)/float(nLoops), 0.05);
         p += step;
-        float h = 0.0;
-        float h_res = 0.0;
         float h_akk = 0.0;
         vec4 c_akk = vec4(0,0,0,1);
         int prev_level = 0;
         bool tmp = false;
         for(int i=0; i<nLoops; i++){
-            h = noise(p);
+            float h = noise(p);
             // if(h > h_res){
             //     h_res = h;
             // }
@@ -86,14 +84,24 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
 
             if (level != prev_level)
             {
+                vec3 gradient = vec3(
+                    noise(p + vec3(+0.05, 0.0, 0.0) ) -
+                    noise(p + vec3(-0.05, 0.0, 0.0) ) ,
+                    noise(p + vec3(0.0, +0.05, 0.0) ) -
+                    noise(p + vec3(0.0, -0.05, 0.0) ) , 
+                    noise(p + vec3(0.0, 0.0, +0.05) ) -
+                    noise(p + vec3(0.0, 0.0, -0.05) ) 
+                    );
+                vec3 N = normalize(gradient);
+                float opacity =  dot(N, -d.xyz);
                 // return vec4(1, 0, 0, 1);
                 if(level == 1) {
-                    h_akk += (1.0-h_akk) * 0.5;
-                    c_akk += (1.0-h_akk) * 0.5 * vec4(0, 0, 1, 1);
+                    h_akk += (1.0-h_akk) * opacity;
+                    c_akk += (1.0-h_akk) * opacity * vec4(0, 0, 1, 1);
                 } else if (level == 2)
                 {
-                    h_akk += (1.0-h_akk) * 0.5;
-                    c_akk += (1.0-h_akk) * 0.5 * vec4(1, 0, 0, 1);
+                    h_akk += (1.0-h_akk) * opacity;
+                    c_akk += (1.0-h_akk) * opacity * vec4(1, 0, 0, 1);
                     // return vec4(1, 0, 0, 1);
                     // return c_akk;// vec4(1, 0, 0, 1);
                 }                
@@ -101,6 +109,7 @@ Shader.source[document.currentScript.src.split('js/shaders/')[1]] = `#version 30
             p += step;
             prev_level = level;
         }
+        c_akk += (1.0-h_akk) * vec4(1, 1, 1, 1);
         // if (tmp)
         // {
         //     return vec4(0, 1, 0, 1);
